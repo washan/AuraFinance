@@ -1,0 +1,146 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Household {
+  id            String         @id @default(uuid()) @db.Uuid
+  name          String
+  users         User[]
+  accounts      Account[]
+  categories    Category[]
+  budgets       Budget[]
+  goals         Goal[]
+  projects      Project[]
+  currencies    Currency[]
+}
+
+model User {
+  id            String        @id @default(uuid()) @db.Uuid
+  householdId   String        @db.Uuid
+  household     Household     @relation(fields: [householdId], references: [id])
+  name          String
+  email         String        @unique
+  role          String        @default("MEMBER")
+  passwordHash  String
+  isBlocked     Boolean       @default(false)
+  transactions  Transaction[]
+}
+
+model Currency {
+  code          String          @id // e.g. USD, CRC
+  householdId   String          @db.Uuid
+  household     Household       @relation(fields: [householdId], references: [id])
+  isLocalBase   Boolean         @default(false)
+  isActive      Boolean         @default(true)
+  exchangeRates ExchangeRate[]
+  accounts      Account[]
+}
+
+model ExchangeRate {
+  id            String    @id @default(uuid()) @db.Uuid
+  currencyCode  String
+  currency      Currency  @relation(fields: [currencyCode], references: [code])
+  rate          Decimal   @db.Decimal(19, 4)
+  effectiveFrom DateTime
+  effectiveTo   DateTime?
+}
+
+model Account {
+  id            String        @id @default(uuid()) @db.Uuid
+  householdId   String        @db.Uuid
+  household     Household     @relation(fields: [householdId], references: [id])
+  name          String
+  type          String        // bank, cash, credit, investment
+  currencyCode  String
+  currency      Currency      @relation(fields: [currencyCode], references: [code])
+  balance       Decimal       @db.Decimal(19, 4) @default(0)
+  transactions  Transaction[]
+}
+
+model Project {
+  id            String        @id @default(uuid()) @db.Uuid
+  householdId   String        @db.Uuid
+  household     Household     @relation(fields: [householdId], references: [id])
+  name          String
+  description   String?
+  transactions  Transaction[]
+}
+
+model Category {
+  id            String    @id @default(uuid()) @db.Uuid
+  householdId   String    @db.Uuid
+  household     Household @relation(fields: [householdId], references: [id])
+  name          String
+  icon          String?
+  items         Item[]
+  budgets       Budget[]
+}
+
+model Item {
+  id            String        @id @default(uuid()) @db.Uuid
+  categoryId    String        @db.Uuid
+  category      Category      @relation(fields: [categoryId], references: [id])
+  name          String
+  transactions  Transaction[]
+}
+
+model Transaction {
+  id               String    @id @default(uuid()) @db.Uuid
+  userId           String    @db.Uuid
+  user             User      @relation(fields: [userId], references: [id])
+  accountId        String    @db.Uuid
+  account          Account   @relation(fields: [accountId], references: [id])
+  payeeId          String?   @db.Uuid // Optional, for future use or explicit Payee table if needed
+  itemId           String?   @db.Uuid
+  item             Item?     @relation(fields: [itemId], references: [id])
+  projectId        String?   @db.Uuid
+  project          Project?  @relation(fields: [projectId], references: [id])
+  amountOriginal   Decimal   @db.Decimal(19, 4)
+  currencyOriginal String
+  exchangeRate     Decimal   @db.Decimal(19, 4)
+  amountBase       Decimal   @db.Decimal(19, 4)
+  transactionDate  DateTime
+  status           String    @default("PENDING") // PENDING, CLASSIFIED, RECONCILED
+  notes            String?   @db.Text
+}
+
+model Budget {
+  id            String     @id @default(uuid()) @db.Uuid
+  householdId   String     @db.Uuid
+  household     Household  @relation(fields: [householdId], references: [id])
+  categoryId    String     @db.Uuid
+  category      Category   @relation(fields: [categoryId], references: [id])
+  limitAmount   Decimal    @db.Decimal(19, 4)
+  period        String     // MM-YYYY
+}
+
+model Goal {
+  id            String     @id @default(uuid()) @db.Uuid
+  householdId   String     @db.Uuid
+  household     Household  @relation(fields: [householdId], references: [id])
+  title         String
+  description   String?    @db.Text
+  targetAmount  Decimal?   @db.Decimal(19, 4)
+  targetDate    DateTime?
+  status        String     @default("IN_PROGRESS") // IN_PROGRESS, COMPLETED
+  tasks         GoalTask[]
+}
+
+model GoalTask {
+  id            String   @id @default(uuid()) @db.Uuid
+  goalId        String   @db.Uuid
+  goal          Goal     @relation(fields: [goalId], references: [id])
+  description   String
+  isCompleted   Boolean  @default(false)
+}
