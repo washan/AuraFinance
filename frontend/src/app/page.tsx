@@ -148,7 +148,7 @@ export default function Dashboard() {
       {/* Main Content */}
       <main className="flex-1 flex flex-col h-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900/20 via-black to-black overflow-y-auto">
         {/* Header */}
-        <header className="h-20 border-b border-white/10 flex items-center justify-between px-8 shrink-0 bg-black/20 backdrop-blur-md sticky top-0 z-10">
+        <header className="h-20 border-b border-white/10 flex items-center justify-between px-4 pl-16 md:px-8 shrink-0 bg-black/20 backdrop-blur-md sticky top-0 z-10">
           <div className="flex items-center gap-6">
             <h1 className="text-2xl font-light tracking-tight">Resumen</h1>
 
@@ -225,7 +225,7 @@ export default function Dashboard() {
         </header>
 
         {/* Dashboard Content */}
-        <div className="p-8 max-w-7xl mx-auto w-full space-y-8 pb-20">
+        <div className="p-4 md:p-8 max-w-7xl mx-auto w-full space-y-8 pb-20">
 
           {error && (
             <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-xl flex items-center gap-3 text-red-400">

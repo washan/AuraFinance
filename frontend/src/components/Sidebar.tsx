@@ -12,7 +12,9 @@ import {
     Settings,
     Bell,
     DownloadCloud,
-    UploadCloud
+    UploadCloud,
+    Menu,
+    X
 } from "lucide-react";
 import { Toast, ToastType } from "./ui/toast";
 
@@ -21,6 +23,7 @@ export function Sidebar() {
     const pathname = usePathname();
     const [user, setUser] = useState<any>(null);
     const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
+    const [isMobileOpen, setIsMobileOpen] = useState(false);
 
     useEffect(() => {
         const storedUser = localStorage.getItem("user");
@@ -113,9 +116,34 @@ export function Sidebar() {
     };
 
     return (
-        <aside className="w-64 border-r border-white/10 bg-white/5 backdrop-blur-xl flex flex-col justify-between hidden md:flex">
-            <div>
-                <div className="h-20 flex items-center px-8 border-b border-white/10">
+        <>
+            {/* Mobile Toggle Button */}
+            <button 
+                onClick={() => setIsMobileOpen(true)}
+                className="md:hidden fixed top-5 left-5 z-40 p-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl text-white shadow-lg"
+            >
+                <Menu size={20} />
+            </button>
+
+            {/* Backdrop for mobile */}
+            {isMobileOpen && (
+                <div 
+                    className="md:hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-40 transition-opacity"
+                    onClick={() => setIsMobileOpen(false)}
+                />
+            )}
+
+            <aside className={`w-64 border-r border-white/10 bg-zinc-950/95 backdrop-blur-xl flex flex-col justify-between fixed inset-y-0 left-0 z-50 transform transition-transform duration-300 md:relative md:translate-x-0 ${isMobileOpen ? "translate-x-0" : "-translate-x-full"}`}>
+                {/* Close Button Mobile */}
+                <button 
+                    onClick={() => setIsMobileOpen(false)}
+                    className="md:hidden absolute top-6 right-4 p-2 text-gray-400 hover:text-white"
+                >
+                    <X size={20} />
+                </button>
+                
+                <div>
+                    <div className="h-20 flex items-center px-8 border-b border-white/10">
                     <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center shadow-[0_0_15px_rgba(99,102,241,0.5)]">
                             <LayoutDashboard className="w-4 h-4 text-white" />
@@ -156,5 +184,6 @@ export function Sidebar() {
             </div>
             {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
         </aside>
+        </>
     );
 }

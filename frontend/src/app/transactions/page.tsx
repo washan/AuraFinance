@@ -410,7 +410,7 @@ export default function TransactionsPage() {
             <Sidebar />
 
             <main className="flex-1 flex flex-col h-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900/20 via-black to-black overflow-y-auto">
-                <header className="h-20 border-b border-white/10 flex items-center justify-between px-8 shrink-0 bg-black/20 backdrop-blur-md sticky top-0 z-10">
+                <header className="h-20 border-b border-white/10 flex items-center justify-between px-4 pl-16 md:px-8 shrink-0 bg-black/20 backdrop-blur-md sticky top-0 z-10">
                     <div className="flex items-center gap-4">
                         <h1 className="text-2xl font-light tracking-tight">Transacciones</h1>
 
@@ -483,7 +483,7 @@ export default function TransactionsPage() {
                     </div>
                 </header>
 
-                <div className="p-8 max-w-6xl mx-auto w-full space-y-8 pb-20">
+                <div className="p-4 md:p-8 max-w-6xl mx-auto w-full space-y-8 pb-20">
                     {/* Activity List */}
                     <div className="bg-white/5 border border-white/10 rounded-3xl p-6 backdrop-blur-sm">
                         <div className="flex justify-between items-center mb-6">

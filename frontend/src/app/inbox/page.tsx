@@ -117,7 +117,7 @@ export default function InboxPage() {
             <Sidebar />
 
             <main className="flex-1 flex flex-col h-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900/20 via-black to-black overflow-y-auto">
-                <header className="h-20 border-b border-white/10 flex items-center justify-between px-8 shrink-0 bg-black/20 backdrop-blur-md sticky top-0 z-10">
+                <header className="h-20 border-b border-white/10 flex items-center justify-between px-4 pl-16 md:px-8 shrink-0 bg-black/20 backdrop-blur-md sticky top-0 z-10">
                     <h1 className="text-2xl font-light tracking-tight flex items-center gap-3">
                         <Bell className="text-indigo-400" />
                         Buzón de Transacciones
@@ -139,7 +139,7 @@ export default function InboxPage() {
                     </div>
                 </header>
 
-                <div className="p-8 max-w-4xl mx-auto w-full space-y-8 pb-20">
+                <div className="p-4 md:p-8 max-w-4xl mx-auto w-full space-y-8 pb-20">
                     {isLoading ? (
                         <div className="flex justify-center py-20">
                             <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-500"></div>
