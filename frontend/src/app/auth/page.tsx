@@ -219,7 +219,8 @@ export default function AuthPage() {
                             variant="outline"
                             className="h-12 border-white/10 bg-white/5 hover:bg-white/10 text-white col-span-2 cursor-pointer"
                             onClick={() => {
-                                window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/auth/google`;
+                                const baseUrl = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/+$/, '');
+                                window.location.href = `${baseUrl}/auth/google`;
                             }}
                         >
                             <svg className="mr-2 w-5 h-5" viewBox="0 0 24 24">
