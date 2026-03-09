@@ -2,6 +2,7 @@ import { Controller, Post, Body, UnauthorizedException, HttpCode, HttpStatus, Ge
 import { AuthGuard } from '@nestjs/passport';
 import type { Request, Response } from 'express';
 import { AuthService } from './auth.service';
+import * as fs from 'fs';
 
 @Controller('auth')
 export class AuthController {
@@ -40,8 +41,6 @@ export class AuthController {
             return res.redirect('http://localhost:3000/auth?error=NoUserFromProvider');
         }
 
-        // Redirigir al frontend pasando el token por URL temporalmente (MVP)
-        // En producción sería mejor usar Cookies HttpOnly o Server-Side Rendering
         const encodedUser = encodeURIComponent(JSON.stringify(result.user));
         res.redirect(`http://localhost:3000/auth/callback?token=${result.access_token}&user=${encodedUser}`);
     }

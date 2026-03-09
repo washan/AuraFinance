@@ -8,7 +8,7 @@ export class CurrenciesController {
     constructor(private readonly currenciesService: CurrenciesService) { }
 
     @Post()
-    create(@Req() req: any, @Body() createCurrencyDto: { code: string; isLocalBase?: boolean; isActive?: boolean }) {
+    create(@Req() req: any, @Body() createCurrencyDto: { code: string; isLocalBase?: boolean; isActive?: boolean; symbol?: string }) {
         return this.currenciesService.create(req.user.householdId, createCurrencyDto);
     }
 
@@ -21,7 +21,7 @@ export class CurrenciesController {
     update(
         @Req() req: any,
         @Param('code') code: string,
-        @Body() updateCurrencyDto: { isLocalBase?: boolean; isActive?: boolean }
+        @Body() updateCurrencyDto: { isLocalBase?: boolean; isActive?: boolean; symbol?: string }
     ) {
         return this.currenciesService.update(req.user.householdId, code, updateCurrencyDto);
     }

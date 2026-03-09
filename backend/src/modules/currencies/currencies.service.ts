@@ -12,7 +12,7 @@ export class CurrenciesService {
         });
     }
 
-    async create(householdId: string, data: { code: string; isLocalBase?: boolean; isActive?: boolean }) {
+    async create(householdId: string, data: { code: string; isLocalBase?: boolean; isActive?: boolean; symbol?: string }) {
         const existing = await this.prisma.currency.findFirst({
             where: { householdId, code: data.code.toUpperCase() }
         });
@@ -32,6 +32,7 @@ export class CurrenciesService {
         return this.prisma.currency.create({
             data: {
                 code: data.code.toUpperCase(),
+                symbol: data.symbol || '$',
                 householdId,
                 isLocalBase: data.isLocalBase ?? false,
                 isActive: data.isActive ?? true,
@@ -39,7 +40,7 @@ export class CurrenciesService {
         });
     }
 
-    async update(householdId: string, code: string, data: { isLocalBase?: boolean; isActive?: boolean }) {
+    async update(householdId: string, code: string, data: { isLocalBase?: boolean; isActive?: boolean; symbol?: string }) {
         const currency = await this.prisma.currency.findFirst({
             where: { householdId, code: code.toUpperCase() }
         });

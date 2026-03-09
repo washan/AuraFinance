@@ -1,0 +1,66 @@
+import { PrismaService } from '../../prisma/prisma.service';
+export declare class CategoriesService {
+    private prisma;
+    constructor(prisma: PrismaService);
+    findAllCategories(householdId: string): Promise<({
+        items: {
+            id: string;
+            name: string;
+            categoryId: string;
+        }[];
+    } & {
+        id: string;
+        name: string;
+        householdId: string;
+        type: string;
+        icon: string | null;
+    })[]>;
+    createCategory(householdId: string, data: {
+        name: string;
+        type?: string;
+        icon?: string;
+    }): Promise<{
+        id: string;
+        name: string;
+        householdId: string;
+        type: string;
+        icon: string | null;
+    }>;
+    updateCategory(householdId: string, categoryId: string, data: {
+        name?: string;
+        type?: string;
+        icon?: string;
+    }): Promise<{
+        id: string;
+        name: string;
+        householdId: string;
+        type: string;
+        icon: string | null;
+    }>;
+    deleteCategory(householdId: string, categoryId: string): Promise<{
+        id: string;
+        name: string;
+        householdId: string;
+        type: string;
+        icon: string | null;
+    }>;
+    createItem(householdId: string, categoryId: string, data: {
+        name: string;
+    }): Promise<{
+        id: string;
+        name: string;
+        categoryId: string;
+    }>;
+    updateItem(householdId: string, categoryId: string, itemId: string, data: {
+        name: string;
+    }): Promise<{
+        id: string;
+        name: string;
+        categoryId: string;
+    }>;
+    deleteItem(householdId: string, categoryId: string, itemId: string): Promise<{
+        id: string;
+        name: string;
+        categoryId: string;
+    }>;
+}

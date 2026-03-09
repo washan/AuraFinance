@@ -14,35 +14,41 @@ datasource db {
 }
 
 model Household {
-  id            String         @id @default(uuid()) @db.Uuid
-  name          String
-  users         User[]
-  accounts      Account[]
-  categories    Category[]
-  budgets       Budget[]
-  goals         Goal[]
-  projects      Project[]
-  currencies    Currency[]
+  id         String     @id @default(uuid()) @db.Uuid
+  name       String
+  users      User[]
+  accounts   Account[]
+  categories Category[]
+  budgets    Budget[]
+  goals      Goal[]
+  projects   Project[]
+  currencies Currency[]
+  bankConnections BankConnection[]
+  inboxRules  InboxRule[]
+  recurringEvents RecurringEvent[]
 }
 
 model User {
-  id            String        @id @default(uuid()) @db.Uuid
-  householdId   String        @db.Uuid
-  household     Household     @relation(fields: [householdId], references: [id])
-  name          String
-  email         String        @unique
-  role          String        @default("MEMBER")
-  passwordHash  String
-  isBlocked     Boolean       @default(false)
-  transactions  Transaction[]
+  id           String        @id @default(uuid()) @db.Uuid
+  householdId  String        @db.Uuid
+  household    Household     @relation(fields: [householdId], references: [id])
+  name         String
+  email        String        @unique
+  role         String        @default("MEMBER")
+  passwordHash String
+  isBlocked    Boolean       @default(false)
+  transactions Transaction[]
+  bankConnections BankConnection[]
+  parameters   Parameter[]
 }
 
 model Currency {
-  code          String          @id // e.g. USD, CRC
-  householdId   String          @db.Uuid
-  household     Household       @relation(fields: [householdId], references: [id])
-  isLocalBase   Boolean         @default(false)
-  isActive      Boolean         @default(true)
+  code          String         @id // e.g. USD, CRC
+  symbol        String         @default("$")
+  householdId   String         @db.Uuid
+  household     Household      @relation(fields: [householdId], references: [id])
+  isLocalBase   Boolean        @default(false)
+  isActive      Boolean        @default(true)
   exchangeRates ExchangeRate[]
   accounts      Account[]
 }
@@ -57,90 +63,190 @@ model ExchangeRate {
 }
 
 model Account {
-  id            String        @id @default(uuid()) @db.Uuid
-  householdId   String        @db.Uuid
-  household     Household     @relation(fields: [householdId], references: [id])
-  name          String
-  type          String        // bank, cash, credit, investment
-  currencyCode  String
-  currency      Currency      @relation(fields: [currencyCode], references: [code])
-  balance       Decimal       @db.Decimal(19, 4) @default(0)
-  transactions  Transaction[]
+  id                   String        @id @default(uuid()) @db.Uuid
+  householdId          String        @db.Uuid
+  household            Household     @relation(fields: [householdId], references: [id])
+  name                 String
+  type                 String // bank, cash, credit, investment
+  currencyCode         String
+  currency             Currency      @relation(fields: [currencyCode], references: [code])
+  balance              Decimal       @default(0) @db.Decimal(19, 4)
+  transactions         Transaction[] @relation("SourceAccount")
+  destinationTransfers Transaction[] @relation("DestinationAccount")
+  inboxRules           InboxRule[]
 }
 
 model Project {
-  id            String        @id @default(uuid()) @db.Uuid
-  householdId   String        @db.Uuid
-  household     Household     @relation(fields: [householdId], references: [id])
-  name          String
-  description   String?
-  transactions  Transaction[]
+  id           String        @id @default(uuid()) @db.Uuid
+  householdId  String        @db.Uuid
+  household    Household     @relation(fields: [householdId], references: [id])
+  name         String
+  description  String?
+  transactions Transaction[]
+  inboxRules   InboxRule[]
 }
 
 model Category {
-  id            String    @id @default(uuid()) @db.Uuid
-  householdId   String    @db.Uuid
-  household     Household @relation(fields: [householdId], references: [id])
-  name          String
-  icon          String?
-  items         Item[]
-  budgets       Budget[]
+  id          String    @id @default(uuid()) @db.Uuid
+  householdId String    @db.Uuid
+  household   Household @relation(fields: [householdId], references: [id])
+  name        String
+  type        String    @default("expense") // 'expense' or 'income'
+  icon        String?
+  items       Item[]
+  budgets     Budget[]
 }
 
 model Item {
-  id            String        @id @default(uuid()) @db.Uuid
-  categoryId    String        @db.Uuid
-  category      Category      @relation(fields: [categoryId], references: [id])
-  name          String
-  transactions  Transaction[]
+  id           String        @id @default(uuid()) @db.Uuid
+  categoryId   String        @db.Uuid
+  category     Category      @relation(fields: [categoryId], references: [id])
+  name         String
+  transactions Transaction[]
+  inboxRules   InboxRule[]
 }
 
 model Transaction {
-  id               String    @id @default(uuid()) @db.Uuid
-  userId           String    @db.Uuid
-  user             User      @relation(fields: [userId], references: [id])
-  accountId        String    @db.Uuid
-  account          Account   @relation(fields: [accountId], references: [id])
-  payeeId          String?   @db.Uuid // Optional, for future use or explicit Payee table if needed
-  itemId           String?   @db.Uuid
-  item             Item?     @relation(fields: [itemId], references: [id])
-  projectId        String?   @db.Uuid
-  project          Project?  @relation(fields: [projectId], references: [id])
-  amountOriginal   Decimal   @db.Decimal(19, 4)
-  currencyOriginal String
-  exchangeRate     Decimal   @db.Decimal(19, 4)
-  amountBase       Decimal   @db.Decimal(19, 4)
-  transactionDate  DateTime
-  status           String    @default("PENDING") // PENDING, CLASSIFIED, RECONCILED
-  notes            String?   @db.Text
+  id                   String   @id @default(uuid()) @db.Uuid
+  userId               String   @db.Uuid
+  user                 User     @relation(fields: [userId], references: [id])
+  accountId            String   @db.Uuid
+  account              Account  @relation("SourceAccount", fields: [accountId], references: [id])
+  destinationAccountId String?  @db.Uuid
+  destinationAccount   Account? @relation("DestinationAccount", fields: [destinationAccountId], references: [id])
+  payeeId              String?  @db.Uuid // Optional, for future use or explicit Payee table if needed
+  itemId               String?  @db.Uuid
+  item                 Item?    @relation(fields: [itemId], references: [id])
+  projectId            String?  @db.Uuid
+  project              Project? @relation(fields: [projectId], references: [id])
+  goalId               String?  @db.Uuid
+  goal                 Goal?    @relation(fields: [goalId], references: [id])
+  type                 String   @default("expense") // 'expense', 'income', 'transfer'
+  amountOriginal       Decimal  @db.Decimal(19, 4)
+  currencyOriginal     String
+  exchangeRate         Decimal  @db.Decimal(19, 4)
+  amountBase           Decimal  @db.Decimal(19, 4)
+  transactionDate      DateTime
+  status               String   @default("PENDING") // PENDING, CLASSIFIED, RECONCILED
+  notes                String?  @db.Text
 }
 
 model Budget {
-  id            String     @id @default(uuid()) @db.Uuid
-  householdId   String     @db.Uuid
-  household     Household  @relation(fields: [householdId], references: [id])
-  categoryId    String     @db.Uuid
-  category      Category   @relation(fields: [categoryId], references: [id])
-  limitAmount   Decimal    @db.Decimal(19, 4)
-  period        String     // MM-YYYY
+  id          String    @id @default(uuid()) @db.Uuid
+  householdId String    @db.Uuid
+  household   Household @relation(fields: [householdId], references: [id])
+  categoryId  String    @db.Uuid
+  category    Category  @relation(fields: [categoryId], references: [id])
+  limitAmount Decimal   @db.Decimal(19, 4)
+  period      String // MM-YYYY
 }
 
 model Goal {
-  id            String     @id @default(uuid()) @db.Uuid
-  householdId   String     @db.Uuid
-  household     Household  @relation(fields: [householdId], references: [id])
-  title         String
-  description   String?    @db.Text
-  targetAmount  Decimal?   @db.Decimal(19, 4)
-  targetDate    DateTime?
-  status        String     @default("IN_PROGRESS") // IN_PROGRESS, COMPLETED
-  tasks         GoalTask[]
+  id           String        @id @default(uuid()) @db.Uuid
+  householdId  String        @db.Uuid
+  household    Household     @relation(fields: [householdId], references: [id])
+  title        String
+  description  String?       @db.Text
+  type         String        @default("savings") // 'savings' or 'expense'
+  targetAmount Decimal?      @db.Decimal(19, 4)
+  targetDate   DateTime?
+  status       String        @default("IN_PROGRESS") // IN_PROGRESS, COMPLETED
+  tasks        GoalTask[]
+  transactions Transaction[]
+  inboxRules   InboxRule[]
 }
 
 model GoalTask {
-  id            String   @id @default(uuid()) @db.Uuid
-  goalId        String   @db.Uuid
-  goal          Goal     @relation(fields: [goalId], references: [id])
-  description   String
-  isCompleted   Boolean  @default(false)
+  id          String  @id @default(uuid()) @db.Uuid
+  goalId      String  @db.Uuid
+  goal        Goal    @relation(fields: [goalId], references: [id])
+  description String
+  isCompleted Boolean @default(false)
+}
+
+model InboxRule {
+  id          String   @id @default(uuid()) @db.Uuid
+  householdId String   @db.Uuid
+  household   Household @relation(fields: [householdId], references: [id])
+  name        String
+  matchValue  String
+  matchType   String   @default("contains")
+  accountId   String?  @db.Uuid
+  account     Account? @relation(fields: [accountId], references: [id])
+  itemId      String?  @db.Uuid
+  item        Item?    @relation(fields: [itemId], references: [id])
+  projectId   String?  @db.Uuid
+  project     Project? @relation(fields: [projectId], references: [id])
+  goalId      String?  @db.Uuid
+  goal        Goal?    @relation(fields: [goalId], references: [id])
+  createdAt   DateTime @default(now())
+}
+
+model BankConnection {
+  id           String    @id @default(uuid()) @db.Uuid
+  householdId  String    @db.Uuid
+  household    Household @relation(fields: [householdId], references: [id])
+  userId       String    @db.Uuid
+  user         User      @relation(fields: [userId], references: [id])
+  provider     String    @default("GMAIL") // GMAIL, OUTLOOK, etc.
+  emailAddress String
+  appPassword  String    // Contraseña de aplicación encriptada
+  isActive     Boolean   @default(true)
+  lastSyncAt   DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  inboxTransactions InboxTransaction[]
+}
+
+model InboxTransaction {
+  id               String          @id @default(uuid()) @db.Uuid
+  bankConnectionId String?         @db.Uuid
+  bankConnection   BankConnection? @relation(fields: [bankConnectionId], references: [id])
+  recurringEventId String?         @db.Uuid
+  recurringEvent   RecurringEvent? @relation(fields: [recurringEventId], references: [id])
+  source           String          @default("EMAIL") // EMAIL, RECURRING
+  sourceId         String?         // Message ID del correo para no duplicar
+  date             DateTime
+  merchant         String
+  amount           Decimal         @db.Decimal(19, 4)
+  currency         String          // CRC, USD
+  accountInfo      String?         // ej. MASTER ***5028
+  transactionType  String?         // COMPRA, RETIRO, etc.
+  status           String          @default("PENDING") // PENDING, PROCESSED, DISMISSED
+  rawContent       String?         @db.Text // Parte del HTML para logging si falla
+  transactionId    String?         @db.Uuid // ID de la transacción final una vez procesada
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+}
+
+model RecurringEvent {
+  id              String    @id @default(uuid()) @db.Uuid
+  householdId     String    @db.Uuid
+  household       Household @relation(fields: [householdId], references: [id])
+  name            String
+  merchant        String
+  amount          Decimal   @db.Decimal(19, 4)
+  currency        String    @default("CRC")
+  frequency       String    @default("monthly") // monthly, biweekly, weekly, annually
+  dayOfMonth      Int?      // 1-31 for monthly/biweekly/annually
+  dayOfMonth2     Int?      // 1-31 second day for biweekly (e.g. 15 if dayOfMonth=1)
+  dayOfWeek       Int?      // 0=Sun, 1=Mon...6=Sat for weekly
+  monthOfYear     Int?      // 1-12 for annually
+  accountInfo     String?   // ej. "****1234"
+  isActive        Boolean   @default(true)
+  lastGeneratedAt DateTime?
+  createdAt       DateTime  @default(now())
+  inboxTransactions InboxTransaction[]
+}
+
+model Parameter {
+  code        String
+  userId      String    @db.Uuid
+  user        User      @relation(fields: [userId], references: [id])
+  description String?
+  value       String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@id([code, userId])
 }

@@ -15,7 +15,7 @@ export class CategoriesController {
     }
 
     @Post()
-    createCategory(@Req() req: any, @Body() body: { name: string; icon?: string }) {
+    createCategory(@Req() req: any, @Body() body: { name: string; type?: string; icon?: string }) {
         return this.categoriesService.createCategory(req.user.householdId, body);
     }
 
@@ -23,7 +23,7 @@ export class CategoriesController {
     updateCategory(
         @Req() req: any,
         @Param('categoryId') categoryId: string,
-        @Body() body: { name?: string; icon?: string }
+        @Body() body: { name?: string; type?: string; icon?: string }
     ) {
         return this.categoriesService.updateCategory(req.user.householdId, categoryId, body);
     }

@@ -5,7 +5,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 export class TransactionsService {
     constructor(private prisma: PrismaService) { }
 
-    async findAll(householdId: string, accountId?: string, take: number = 50, skip: number = 0) {
+    async findAll(householdId: string, accountId?: string, projectId?: string, month?: string, take: number = 50, skip: number = 0) {
         const whereClause: any = {
             user: { householdId }
         };
@@ -13,12 +13,28 @@ export class TransactionsService {
         if (accountId) {
             whereClause.accountId = accountId;
         }
+        if (projectId === '__none__') {
+            whereClause.projectId = null;
+        } else if (projectId) {
+            whereClause.projectId = projectId;
+        }
+        if (month && /^\d{4}-\d{2}$/.test(month)) {
+            const [y, m] = month.split('-').map(Number);
+            const refMonth = m - 1;
+            const mStart = new Date(Date.UTC(y, refMonth, 1, 0, 0, 0, 0));
+            const nextMo = refMonth === 11 ? 0 : refMonth + 1;
+            const nextYr = refMonth === 11 ? y + 1 : y;
+            const mEnd = new Date(Date.UTC(nextYr, nextMo, 1, 0, 0, 0, 0) - 1);
+            whereClause.transactionDate = { gte: mStart, lte: mEnd };
+        }
 
         return this.prisma.transaction.findMany({
             where: whereClause,
             include: {
-                account: { select: { name: true, currencyCode: true } },
-                item: { select: { name: true, category: { select: { name: true, icon: true } } } }
+                account: { select: { id: true, name: true, currencyCode: true } },
+                destinationAccount: { select: { id: true, name: true, currencyCode: true } },
+                goal: { select: { id: true, title: true } },
+                item: { select: { id: true, name: true, categoryId: true, category: { select: { id: true, name: true, icon: true } } } }
             },
             orderBy: { transactionDate: 'desc' },
             take,
@@ -31,6 +47,115 @@ export class TransactionsService {
         householdId: string,
         data: {
             accountId: string;
+            destinationAccountId?: string;
+            goalId?: string;
+            type?: string;
+            itemId?: string;
+            projectId?: string;
+            amountOriginal: string;
+            currencyOriginal: string;
+            exchangeRate: string;
+            amountBase: string;
+            transactionDate: string;
+            notes?: string;
+            inboxTransactionId?: string;
+        }
+    ) {
+        // Validate source account
+        const account = await this.prisma.account.findFirst({
+            where: { id: data.accountId, householdId }
+        });
+        if (!account) throw new NotFoundException(`La cuenta de origen no existe o no pertenece a tu entorno.`);
+
+        // Validate destination if transfer
+        if (data.type === 'transfer') {
+            if (!data.destinationAccountId) throw new BadRequestException(`Falta cuenta de destino para la transferencia.`);
+            if (data.accountId === data.destinationAccountId) throw new BadRequestException(`No puedes transferir a la misma cuenta.`);
+            const destAccount = await this.prisma.account.findFirst({
+                where: { id: data.destinationAccountId, householdId }
+            });
+            if (!destAccount) throw new NotFoundException(`La cuenta de destino no existe en tu entorno.`);
+        }
+
+        return this.prisma.$transaction(async (tx) => {
+            const amountBaseNum = parseFloat(data.amountBase);
+            const absAmount = Math.abs(amountBaseNum);
+            const resolvedType = data.type || 'expense';
+
+            const transaction = await tx.transaction.create({
+                data: {
+                    userId,
+                    accountId: data.accountId,
+                    destinationAccountId: resolvedType === 'transfer' ? data.destinationAccountId : null,
+                    goalId: data.goalId || null,
+                    type: resolvedType,
+                    itemId: data.itemId || null,
+                    projectId: resolvedType === 'transfer' ? null : (data.projectId || null),
+                    amountOriginal: parseFloat(data.amountOriginal),
+                    currencyOriginal: data.currencyOriginal,
+                    exchangeRate: parseFloat(data.exchangeRate),
+                    amountBase: resolvedType === 'transfer' ? absAmount : amountBaseNum,
+                    transactionDate: new Date(data.transactionDate),
+                    notes: data.notes || null,
+                    status: 'CLASSIFIED'
+                },
+                include: {
+                    account: true, destinationAccount: true, goal: true,
+                    item: { include: { category: true } }
+                }
+            });
+
+            // Apply cross balances
+            if (resolvedType === 'transfer') {
+                await tx.account.update({
+                    where: { id: data.accountId },
+                    data: { balance: { decrement: absAmount } }
+                });
+                await tx.account.update({
+                    where: { id: data.destinationAccountId },
+                    data: { balance: { increment: absAmount } }
+                });
+            } else {
+                await tx.account.update({
+                    where: { id: data.accountId },
+                    data: { balance: { increment: amountBaseNum } }
+                });
+            }
+
+            if (data.inboxTransactionId) {
+                await tx.inboxTransaction.update({
+                    where: { id: data.inboxTransactionId },
+                    data: { status: 'PROCESSED', transactionId: transaction.id }
+                });
+            }
+
+            // Save last exchange rate
+            if (data.currencyOriginal !== account.currencyCode && parseFloat(data.exchangeRate) !== 1.0) {
+                await tx.parameter.upsert({
+                    where: {
+                        code_userId: {
+                            code: 'LAST_EXCHANGE_RATE',
+                            userId
+                        }
+                    },
+                    update: { value: data.exchangeRate },
+                    create: { code: 'LAST_EXCHANGE_RATE', userId, value: data.exchangeRate, description: 'Último tipo de cambio ingresado por el usuario' }
+                });
+            }
+
+            return transaction;
+        });
+    }
+
+    async update(
+        userId: string,
+        householdId: string,
+        transactionId: string,
+        data: {
+            accountId: string;
+            destinationAccountId?: string;
+            goalId?: string;
+            type?: string;
             itemId?: string;
             projectId?: string;
             amountOriginal: string;
@@ -41,51 +166,120 @@ export class TransactionsService {
             notes?: string;
         }
     ) {
-        // Validate account belongs to household
-        const account = await this.prisma.account.findFirst({
-            where: { id: data.accountId, householdId }
+        const oldT = await this.prisma.transaction.findFirst({
+            where: { id: transactionId, user: { householdId } }
         });
+        if (!oldT) throw new NotFoundException(`Transacción no encontrada`);
 
-        if (!account) {
-            throw new NotFoundException(`La cuenta no existe o no pertenece a tu entorno.`);
+        if (data.type === 'transfer' && data.accountId === data.destinationAccountId) {
+            throw new BadRequestException(`No puedes transferir a la misma cuenta.`);
         }
 
-        // We use Prisma Transactions to ensure atomicity (both the tx is created AND balance updated)
         return this.prisma.$transaction(async (tx) => {
-            const amountBaseNum = parseFloat(data.amountBase);
+            // 1. REVERT OLD TRANSACTION BALANCE
+            if (oldT.type === 'transfer' && oldT.destinationAccountId) {
+                const oldAbs = Math.abs(Number(oldT.amountBase));
+                await tx.account.update({
+                    where: { id: oldT.accountId },
+                    data: { balance: { increment: oldAbs } }
+                });
+                await tx.account.update({
+                    where: { id: oldT.destinationAccountId },
+                    data: { balance: { decrement: oldAbs } }
+                });
+            } else {
+                await tx.account.update({
+                    where: { id: oldT.accountId },
+                    data: { balance: { decrement: oldT.amountBase } }
+                });
+            }
 
-            const transaction = await tx.transaction.create({
+            // 2. APPLY NEW BALANCE
+            const newAmountBaseNum = parseFloat(data.amountBase);
+            const absAmount = Math.abs(newAmountBaseNum);
+            const resType = data.type || oldT.type;
+
+            if (resType === 'transfer') {
+                await tx.account.update({
+                    where: { id: data.accountId },
+                    data: { balance: { decrement: absAmount } }
+                });
+                await tx.account.update({
+                    where: { id: data.destinationAccountId },
+                    data: { balance: { increment: absAmount } }
+                });
+            } else {
+                await tx.account.update({
+                    where: { id: data.accountId },
+                    data: { balance: { increment: newAmountBaseNum } }
+                });
+            }
+
+            // 3. UPDATE TRANSACTION FOOTPRINT
+            const transaction = await tx.transaction.update({
+                where: { id: transactionId },
                 data: {
-                    userId,
                     accountId: data.accountId,
-                    itemId: data.itemId,
-                    projectId: data.projectId,
+                    destinationAccountId: resType === 'transfer' ? data.destinationAccountId : null,
+                    goalId: data.goalId || null,
+                    type: resType,
+                    itemId: data.itemId || null,
+                    projectId: resType === 'transfer' ? null : (data.projectId || null),
                     amountOriginal: parseFloat(data.amountOriginal),
                     currencyOriginal: data.currencyOriginal,
                     exchangeRate: parseFloat(data.exchangeRate),
-                    amountBase: amountBaseNum,
+                    amountBase: resType === 'transfer' ? absAmount : newAmountBaseNum,
                     transactionDate: new Date(data.transactionDate),
-                    notes: data.notes,
-                    status: 'CLASSIFIED'
-                },
-                include: {
-                    account: { select: { name: true, currencyCode: true } },
-                    item: { select: { name: true, category: { select: { name: true, icon: true } } } }
+                    notes: data.notes || null,
                 }
             });
 
-            // Update account balance
-            // If amountBase is negative (expense), this subtracts. If positive (income), adds.
-            await tx.account.update({
-                where: { id: data.accountId },
-                data: {
-                    balance: {
-                        increment: amountBaseNum
-                    }
-                }
-            });
+            // Save last exchange rate
+            const account = await tx.account.findUnique({ where: { id: data.accountId } });
+            if (account && data.currencyOriginal !== account.currencyCode && parseFloat(data.exchangeRate) !== 1.0) {
+                await tx.parameter.upsert({
+                    where: {
+                        code_userId: {
+                            code: 'LAST_EXCHANGE_RATE',
+                            userId
+                        }
+                    },
+                    update: { value: data.exchangeRate },
+                    create: { code: 'LAST_EXCHANGE_RATE', userId, value: data.exchangeRate, description: 'Último tipo de cambio ingresado por el usuario' }
+                });
+            }
 
             return transaction;
+        });
+    }
+
+    async remove(householdId: string, transactionId: string) {
+        const oldT = await this.prisma.transaction.findFirst({
+            where: { id: transactionId, user: { householdId } }
+        });
+        if (!oldT) throw new NotFoundException(`La transacción no existe.`);
+
+        return this.prisma.$transaction(async (tx) => {
+            if (oldT.type === 'transfer' && oldT.destinationAccountId) {
+                const oldAbs = Math.abs(Number(oldT.amountBase));
+                await tx.account.update({
+                    where: { id: oldT.accountId },
+                    data: { balance: { increment: oldAbs } }
+                });
+                await tx.account.update({
+                    where: { id: oldT.destinationAccountId },
+                    data: { balance: { decrement: oldAbs } }
+                });
+            } else {
+                await tx.account.update({
+                    where: { id: oldT.accountId },
+                    data: { balance: { decrement: oldT.amountBase } }
+                });
+            }
+
+            return tx.transaction.delete({
+                where: { id: transactionId }
+            });
         });
     }
 }

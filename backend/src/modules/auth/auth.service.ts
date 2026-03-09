@@ -64,6 +64,15 @@ export class AuthService {
 
     async login(user: any) {
         const payload = { email: user.email, sub: user.id, householdId: user.householdId };
+
+        let baseCurrencySymbol = '$';
+        if (user.householdId) {
+            const baseCurrency = await this.prisma.currency.findFirst({
+                where: { householdId: user.householdId, isLocalBase: true }
+            });
+            if (baseCurrency) baseCurrencySymbol = baseCurrency.symbol;
+        }
+
         return {
             access_token: this.jwtService.sign(payload),
             user: {
@@ -72,6 +81,7 @@ export class AuthService {
                 name: user.name,
                 role: user.role,
                 householdId: user.householdId,
+                baseCurrencySymbol,
             }
         };
     }
@@ -151,9 +161,17 @@ export class AuthService {
             householdId: user!.householdId
         };
 
+        let baseCurrencySymbol = '$';
+        if (user!.householdId) {
+            const baseCurrency = await this.prisma.currency.findFirst({
+                where: { householdId: user!.householdId, isLocalBase: true }
+            });
+            if (baseCurrency) baseCurrencySymbol = baseCurrency.symbol;
+        }
+
         return {
             access_token: this.jwtService.sign(jwtPayload),
-            user: { id: user!.id, email: user!.email, name: user!.name, householdId: user!.householdId }
+            user: { id: user!.id, email: user!.email, name: user!.name, householdId: user!.householdId, baseCurrencySymbol }
         };
     }
 }

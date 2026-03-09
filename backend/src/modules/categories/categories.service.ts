@@ -19,7 +19,7 @@ export class CategoriesService {
         });
     }
 
-    async createCategory(householdId: string, data: { name: string; icon?: string }) {
+    async createCategory(householdId: string, data: { name: string; type?: string; icon?: string }) {
         return this.prisma.category.create({
             data: {
                 ...data,
@@ -28,7 +28,7 @@ export class CategoriesService {
         });
     }
 
-    async updateCategory(householdId: string, categoryId: string, data: { name?: string; icon?: string }) {
+    async updateCategory(householdId: string, categoryId: string, data: { name?: string; type?: string; icon?: string }) {
         const category = await this.prisma.category.findFirst({
             where: { id: categoryId, householdId }
         });
