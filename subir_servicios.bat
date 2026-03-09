@@ -21,17 +21,7 @@ echo [OK] Privilegios de administrador confirmados.
 set BASE_DIR=%~dp0
 cd /d "%BASE_DIR%"
 
-:: 2. Iniciar Docker (Base de datos Postgres)
-echo [*] Iniciando contenedores Docker (Base de datos)...
-docker-compose up -d
-if %errorLevel% neq 0 (
-    echo [ERROR] Falló al iniciar Docker. Por favor asegúrese de que Docker Desktop esté ejecutándose.
-    pause
-    exit /b
-)
-echo [OK] Base de datos iniciada.
-
-:: 3. Iniciar Backend
+:: 2. Iniciar Backend
 echo [*] Iniciando servidor Backend en puerto 3001...
 cd /d "%BASE_DIR%backend"
 start "Servidor Backend - npm run start:dev" cmd /c "npm run start:dev"
@@ -92,9 +82,9 @@ goto check_frontend_loop
 :all_done
 echo.
 echo ==============================================================
-echo                     SISTEMA ONLINE
+echo                     SISTEMA ONLINE (AURA)
 echo ==============================================================
-echo * Base de datos lista
+echo * Base de datos en Supabase lista
 echo * Backend sirviendo API
 echo * Aplicacion disponible en: http://localhost:3000
 echo.
