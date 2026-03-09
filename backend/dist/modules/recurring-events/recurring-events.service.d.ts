@@ -1,0 +1,98 @@
+import { PrismaService } from '../../prisma/prisma.service';
+import { CreateRecurringEventDto } from './dto/create-recurring-event.dto';
+import { UpdateRecurringEventDto } from './dto/update-recurring-event.dto';
+export declare class RecurringEventsService {
+    private prisma;
+    private readonly logger;
+    constructor(prisma: PrismaService);
+    create(householdId: string, dto: CreateRecurringEventDto): Promise<{
+        currency: string;
+        name: string;
+        id: string;
+        householdId: string;
+        isActive: boolean;
+        merchant: string;
+        amount: import("@prisma/client/runtime/library").Decimal;
+        accountInfo: string | null;
+        createdAt: Date;
+        frequency: string;
+        dayOfMonth: number | null;
+        dayOfMonth2: number | null;
+        dayOfWeek: number | null;
+        monthOfYear: number | null;
+        lastGeneratedAt: Date | null;
+    }>;
+    findAll(householdId: string): Promise<{
+        currency: string;
+        name: string;
+        id: string;
+        householdId: string;
+        isActive: boolean;
+        merchant: string;
+        amount: import("@prisma/client/runtime/library").Decimal;
+        accountInfo: string | null;
+        createdAt: Date;
+        frequency: string;
+        dayOfMonth: number | null;
+        dayOfMonth2: number | null;
+        dayOfWeek: number | null;
+        monthOfYear: number | null;
+        lastGeneratedAt: Date | null;
+    }[]>;
+    findOne(householdId: string, id: string): Promise<{
+        currency: string;
+        name: string;
+        id: string;
+        householdId: string;
+        isActive: boolean;
+        merchant: string;
+        amount: import("@prisma/client/runtime/library").Decimal;
+        accountInfo: string | null;
+        createdAt: Date;
+        frequency: string;
+        dayOfMonth: number | null;
+        dayOfMonth2: number | null;
+        dayOfWeek: number | null;
+        monthOfYear: number | null;
+        lastGeneratedAt: Date | null;
+    }>;
+    update(householdId: string, id: string, dto: UpdateRecurringEventDto): Promise<{
+        currency: string;
+        name: string;
+        id: string;
+        householdId: string;
+        isActive: boolean;
+        merchant: string;
+        amount: import("@prisma/client/runtime/library").Decimal;
+        accountInfo: string | null;
+        createdAt: Date;
+        frequency: string;
+        dayOfMonth: number | null;
+        dayOfMonth2: number | null;
+        dayOfWeek: number | null;
+        monthOfYear: number | null;
+        lastGeneratedAt: Date | null;
+    }>;
+    remove(householdId: string, id: string): Promise<{
+        currency: string;
+        name: string;
+        id: string;
+        householdId: string;
+        isActive: boolean;
+        merchant: string;
+        amount: import("@prisma/client/runtime/library").Decimal;
+        accountInfo: string | null;
+        createdAt: Date;
+        frequency: string;
+        dayOfMonth: number | null;
+        dayOfMonth2: number | null;
+        dayOfWeek: number | null;
+        monthOfYear: number | null;
+        lastGeneratedAt: Date | null;
+    }>;
+    generateDueTransactions(): Promise<{
+        generated: number;
+    }>;
+    private isDueToday;
+    private alreadyGeneratedThisPeriod;
+}

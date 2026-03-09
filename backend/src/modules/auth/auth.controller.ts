@@ -37,11 +37,13 @@ export class AuthController {
     async googleAuthRedirect(@Req() req: Request, @Res() res: Response) {
         const result = await this.authService.googleLogin(req);
 
+        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+
         if (typeof result === 'string') {
-            return res.redirect('http://localhost:3000/auth?error=NoUserFromProvider');
+            return res.redirect(`${frontendUrl}/auth?error=NoUserFromProvider`);
         }
 
         const encodedUser = encodeURIComponent(JSON.stringify(result.user));
-        res.redirect(`http://localhost:3000/auth/callback?token=${result.access_token}&user=${encodedUser}`);
+        res.redirect(`${frontendUrl}/auth/callback?token=${result.access_token}&user=${encodedUser}`);
     }
 }
