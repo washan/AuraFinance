@@ -581,71 +581,55 @@ export default function SettingsPage() {
 
             <main className="flex-1 flex flex-col h-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900/20 via-black to-black overflow-y-auto">
                 {/* Header */}
-                <header className="h-20 border-b border-white/10 flex items-center justify-between px-4 pl-16 md:px-8 shrink-0 bg-black/20 backdrop-blur-md sticky top-0 z-10">
-                    <h1 className="text-2xl font-light tracking-tight">Ajustes & Catálogos</h1>
-
-                    <div className="flex items-center gap-6">
-                        <button className="relative p-2 rounded-full hover:bg-white/10 transition-colors">
-                            <Bell className="w-5 h-5 text-gray-300" />
-                        </button>
-                        <button
-                            className="text-sm text-gray-400 hover:text-white"
-                            onClick={() => {
-                                localStorage.removeItem("token");
-                                localStorage.removeItem("user");
-                                router.push("/auth");
-                            }}
-                        >
-                            Salir
-                        </button>
-                    </div>
+                <header className="h-16 border-b border-white/10 flex items-center px-4 pl-16 md:px-8 shrink-0 bg-black/20 backdrop-blur-md sticky top-0 z-10">
+                    <h1 className="text-xl md:text-2xl font-light tracking-tight">Ajustes & Catálogos</h1>
                 </header>
 
                 <div className="p-4 md:p-8 max-w-5xl mx-auto w-full space-y-8 pb-20">
 
-                    {/* Tabs */}
-                    <div className="flex gap-4 border-b border-white/10 pb-4">
+                    {/* Tabs — horizontally scrollable on mobile */}
+                    <div className="flex gap-1 border-b border-white/10 pb-2 overflow-x-auto scrollbar-none -mx-4 px-4 md:mx-0 md:px-0 md:gap-2">
                         <button
-                            className={`px-4 py-2 font-medium rounded-lg transition-colors ${activeTab === "currencies" ? "bg-indigo-500/20 text-indigo-300" : "text-gray-400 hover:text-white hover:bg-white/5"}`}
+                            className={`shrink-0 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === "currencies" ? "bg-indigo-500/20 text-indigo-300" : "text-gray-400 hover:text-white hover:bg-white/5"}`}
                             onClick={() => setActiveTab("currencies")}
                         >
                             Monedas
                         </button>
                         <button
-                            className={`px-4 py-2 font-medium rounded-lg transition-colors ${activeTab === "categories" ? "bg-indigo-500/20 text-indigo-300" : "text-gray-400 hover:text-white hover:bg-white/5"}`}
+                            className={`shrink-0 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === "categories" ? "bg-indigo-500/20 text-indigo-300" : "text-gray-400 hover:text-white hover:bg-white/5"}`}
                             onClick={() => setActiveTab("categories")}
                         >
-                            Categorías e Ítems
+                            Categorías
                         </button>
                         <button
-                            className={`px-4 py-2 font-medium rounded-lg transition-colors ${activeTab === "accounts" ? "bg-indigo-500/20 text-indigo-300" : "text-gray-400 hover:text-white hover:bg-white/5"}`}
+                            className={`shrink-0 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === "accounts" ? "bg-indigo-500/20 text-indigo-300" : "text-gray-400 hover:text-white hover:bg-white/5"}`}
                             onClick={() => setActiveTab("accounts")}
                         >
                             Cuentas
                         </button>
                         <button
-                            className={`px-4 py-2 font-medium rounded-lg transition-colors ${activeTab === "projects" ? "bg-indigo-500/20 text-indigo-300" : "text-gray-400 hover:text-white hover:bg-white/5"}`}
+                            className={`shrink-0 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === "projects" ? "bg-indigo-500/20 text-indigo-300" : "text-gray-400 hover:text-white hover:bg-white/5"}`}
                             onClick={() => setActiveTab("projects")}
                         >
-                            Actividades Económicas
+                            Actividades
                         </button>
                         <button
-                            className={`px-4 py-2 font-medium rounded-lg transition-colors ${activeTab === "goals" ? "bg-indigo-500/20 text-indigo-300" : "text-gray-400 hover:text-white hover:bg-white/5"}`}
+                            className={`shrink-0 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === "goals" ? "bg-indigo-500/20 text-indigo-300" : "text-gray-400 hover:text-white hover:bg-white/5"}`}
                             onClick={() => setActiveTab("goals")}
                         >
-                            Metas de Ahorro
+                            Metas
                         </button>
                         <button
-                            className={`px-4 py-2 font-medium rounded-lg transition-colors flex items-center gap-2 ${activeTab === "rules" ? "bg-amber-500/20 text-amber-300" : "text-gray-400 hover:text-white hover:bg-white/5"}`}
+                            className={`shrink-0 px-3 py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-1.5 ${activeTab === "rules" ? "bg-amber-500/20 text-amber-300" : "text-gray-400 hover:text-white hover:bg-white/5"}`}
                             onClick={() => setActiveTab("rules")}
                         >
-                            <Zap size={16} /> Reglas
+                            <Zap size={14} /> Reglas
                         </button>
                         <button
-                            className={`px-4 py-2 font-medium rounded-lg transition-colors flex items-center gap-2 ${activeTab === "recurring" ? "bg-cyan-500/20 text-cyan-300" : "text-gray-400 hover:text-white hover:bg-white/5"}`}
+                            className={`shrink-0 px-3 py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-1.5 ${activeTab === "recurring" ? "bg-cyan-500/20 text-cyan-300" : "text-gray-400 hover:text-white hover:bg-white/5"}`}
                             onClick={() => setActiveTab("recurring")}
                         >
-                            <RefreshCw size={16} /> Recurrentes
+                            <RefreshCw size={14} /> Recurrentes
                         </button>
                     </div>
 
