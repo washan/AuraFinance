@@ -268,6 +268,17 @@ export default function TransactionsPage() {
         }
     }, [formData.accountId, accountCurrency, parameters, formData.inboxTransactionId]);
 
+    // When coming from inbox, apply LAST_EXCHANGE_RATE once parameters are loaded
+    // (the above effect is skipped for inbox transactions to preserve the inbox currency)
+    useEffect(() => {
+        if (formData.inboxTransactionId && parameters.length > 0 && formData.exchangeRate === "1.0") {
+            const lastRate = parameters.find((p: any) => p.code === 'LAST_EXCHANGE_RATE')?.value;
+            if (lastRate) {
+                setFormData(prev => ({ ...prev, exchangeRate: lastRate }));
+            }
+        }
+    }, [formData.inboxTransactionId, parameters]);
+
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
