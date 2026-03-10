@@ -459,6 +459,7 @@ export default function TransactionsPage() {
                         <button onClick={() => {
                             setEditingTransactionId(null);
                             const cached = getCachedDefaults();
+                            const lastRate = parameters.find((p: any) => p.code === 'LAST_EXCHANGE_RATE')?.value || "1.0";
                             setFormData({
                                 type: cached.type || "expense",
                                 accountId: cached.accountId || "",
@@ -469,7 +470,7 @@ export default function TransactionsPage() {
                                 projectId: cached.projectId || "",
                                 amountOriginal: "",
                                 currencyOriginal: cached.currencyOriginal || "",
-                                exchangeRate: "1",
+                                exchangeRate: lastRate,
                                 amountBase: "",
                                 transactionDate: format(new Date(), 'yyyy-MM-dd'),
                                 notes: "",
