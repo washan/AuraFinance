@@ -563,23 +563,36 @@ export default function TransactionsPage() {
                                         <div
                                             key={tx.id}
                                             onClick={() => openEditModal(tx)}
-                                            className="flex items-center justify-between p-4 bg-black/40 border border-white/5 rounded-xl hover:bg-white/5 transition-colors group cursor-pointer relative"
+                                            className="flex items-center gap-3 p-4 bg-black/40 border border-white/5 rounded-xl hover:bg-white/5 transition-colors group cursor-pointer relative"
                                         >
-                                            <div className="flex items-center gap-4">
-                                                <div className={`w-10 h-10 rounded-full flex items-center justify-center bg-gradient-to-br ${isExpense ? 'from-red-500/20 to-orange-500/20 text-red-400' : 'from-emerald-500/20 to-teal-500/20 text-emerald-400'}`}>
-                                                    {isExpense ? <ArrowDownRight size={20} /> : <ArrowUpRight size={20} />}
+                                            {/* Icon */}
+                                            <div className={`w-9 h-9 shrink-0 rounded-full flex items-center justify-center bg-gradient-to-br ${isExpense ? 'from-red-500/20 to-orange-500/20 text-red-400' : 'from-emerald-500/20 to-teal-500/20 text-emerald-400'}`}>
+                                                {isExpense ? <ArrowDownRight size={18} /> : <ArrowUpRight size={18} />}
+                                            </div>
+
+                                            {/* Middle: title + badges + date — takes all available space */}
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-1.5 flex-wrap">
+                                                    <p className="font-medium text-gray-200 truncate">{tx.item?.name || 'Manual'}</p>
                                                 </div>
-                                                <div>
-                                                    <div className="flex items-center gap-2">
-                                                        <p className="font-medium text-gray-200">{tx.item?.name || 'Manual'}</p>
-                                                        {tx.item?.category && <span className="text-[10px] px-2 py-0.5 rounded flex items-center gap-1 bg-white/5 text-gray-400 border border-white/10"><span className="text-sm">{tx.item.category.icon}</span> {tx.item.category.name}</span>}
-                                                        {tx.projectId && <span className="text-[10px] px-2 py-0.5 rounded flex items-center gap-1 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">💼 {projects.find(p => p.id === tx.projectId)?.name || 'Actividad Economica'}</span>}
-                                                    </div>
-                                                    <p className="text-xs text-gray-500 mt-1 flex items-center gap-2">
-                                                        <span>{format(new Date(tx.transactionDate.split('T')[0] + 'T12:00:00'), 'MMM dd, yyyy')}</span> •
-                                                        <span>{tx.account?.name}</span>
-                                                    </p>
+                                                {/* Badges — on a second line so they don't push the amount */}
+                                                <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+                                                    {tx.item?.category && (
+                                                        <span className="text-[10px] px-1.5 py-0.5 rounded flex items-center gap-1 bg-white/5 text-gray-400 border border-white/10 whitespace-nowrap">
+                                                            <span className="text-xs">{tx.item.category.icon}</span> {tx.item.category.name}
+                                                        </span>
+                                                    )}
+                                                    {tx.projectId && (
+                                                        <span className="text-[10px] px-1.5 py-0.5 rounded flex items-center gap-1 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 whitespace-nowrap">
+                                                            💼 {projects.find(p => p.id === tx.projectId)?.name || 'Actividad'}
+                                                        </span>
+                                                    )}
                                                 </div>
+                                                <p className="text-xs text-gray-500 mt-0.5 flex items-center gap-1.5">
+                                                    <span>{format(new Date(tx.transactionDate.split('T')[0] + 'T12:00:00'), 'MMM dd, yyyy')}</span>
+                                                    <span>•</span>
+                                                    <span className="truncate">{tx.account?.name}</span>
+                                                </p>
                                             </div>
 
                                             {/* Hover Actions */}
@@ -593,13 +606,15 @@ export default function TransactionsPage() {
                                                 </button>
                                             </div>
 
-                                            <div className="text-right">
-                                                <p className={`font-bold ${isExpense ? 'text-red-400' : 'text-emerald-400'}`}>
-                                                    {isExpense ? '' : '+'}{formatCurrency(parseFloat(tx.amountBase), currencies.find(c => c.code === tx.account?.currencyCode)?.symbol)} <span className="text-xs opacity-70">{tx.account?.currencyCode}</span>
+                                            {/* Amount — shrink-0 so it never gets cut off */}
+                                            <div className="shrink-0 text-right ml-2">
+                                                <p className={`font-bold text-sm ${isExpense ? 'text-red-400' : 'text-emerald-400'}`}>
+                                                    {isExpense ? '' : '+'}{formatCurrency(parseFloat(tx.amountBase), currencies.find(c => c.code === tx.account?.currencyCode)?.symbol)}
                                                 </p>
+                                                <p className="text-[10px] text-gray-500">{tx.account?.currencyCode}</p>
                                                 {tx.currencyOriginal !== tx.account?.currencyCode && (
-                                                    <p className="text-xs text-gray-500 mt-0.5">
-                                                        Original: {formatCurrency(parseFloat(tx.amountOriginal), currencies.find(c => c.code === tx.currencyOriginal)?.symbol)} {tx.currencyOriginal} (Tipo: {tx.exchangeRate})
+                                                    <p className="hidden md:block text-xs text-gray-600 mt-0.5">
+                                                        {formatCurrency(parseFloat(tx.amountOriginal), currencies.find(c => c.code === tx.currencyOriginal)?.symbol)} {tx.currencyOriginal}
                                                     </p>
                                                 )}
                                             </div>
