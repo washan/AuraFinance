@@ -421,52 +421,53 @@ export default function TransactionsPage() {
             <Sidebar />
 
             <main className="flex-1 flex flex-col h-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900/20 via-black to-black overflow-y-auto">
-                <header className="h-20 border-b border-white/10 flex items-center justify-between px-4 pl-16 md:px-8 shrink-0 bg-black/20 backdrop-blur-md sticky top-0 z-10">
-                    <div className="flex items-center gap-4">
-                        <h1 className="text-2xl font-light tracking-tight">Transacciones</h1>
+                {/* Header — two rows on mobile, one row on desktop */}
+                <header className="border-b border-white/10 shrink-0 bg-black/20 backdrop-blur-md sticky top-0 z-10">
+                    {/* Row 1: Title + New Button */}
+                    <div className="h-16 flex items-center justify-between px-4 pl-16 md:px-8">
+                        <div className="flex items-center gap-3">
+                            <h1 className="text-xl md:text-2xl font-light tracking-tight">Transacciones</h1>
 
-                        {/* Month Navigator */}
-                        <div className="flex items-center gap-1 bg-white/5 border border-white/10 rounded-xl px-1 py-0.5">
-                            <button
-                                onClick={() => navigateMonth(-1)}
-                                className="p-1.5 rounded-lg hover:bg-white/10 transition-colors text-gray-400 hover:text-white"
-                                title="Mes anterior"
-                            >
-                                <ChevronLeft size={16} />
-                            </button>
-                            <button
-                                onClick={() => goToCurrentMonth()}
-                                className={`flex items-center gap-2 px-3 py-1 rounded-lg text-sm font-medium transition-colors ${isCurrentMonth ? 'text-indigo-300' : 'text-amber-300 hover:bg-white/10'
-                                    }`}
-                                title={isCurrentMonth ? 'Mes actual' : 'Ir al mes actual'}
-                            >
-                                <Calendar size={14} />
-                                {formatMonthLabel(selectedMonth)}
-                            </button>
-                            <button
-                                onClick={() => navigateMonth(1)}
-                                className="p-1.5 rounded-lg hover:bg-white/10 transition-colors text-gray-400 hover:text-white"
-                                title="Mes siguiente"
-                            >
-                                <ChevronRight size={16} />
-                            </button>
+                            {/* Month Navigator — hidden on mobile, shown on desktop */}
+                            <div className="hidden md:flex items-center gap-1 bg-white/5 border border-white/10 rounded-xl px-1 py-0.5">
+                                <button
+                                    onClick={() => navigateMonth(-1)}
+                                    className="p-1.5 rounded-lg hover:bg-white/10 transition-colors text-gray-400 hover:text-white"
+                                    title="Mes anterior"
+                                >
+                                    <ChevronLeft size={16} />
+                                </button>
+                                <button
+                                    onClick={() => goToCurrentMonth()}
+                                    className={`flex items-center gap-2 px-3 py-1 rounded-lg text-sm font-medium transition-colors ${isCurrentMonth ? 'text-indigo-300' : 'text-amber-300 hover:bg-white/10'}`}
+                                    title={isCurrentMonth ? 'Mes actual' : 'Ir al mes actual'}
+                                >
+                                    <Calendar size={14} />
+                                    {formatMonthLabel(selectedMonth)}
+                                </button>
+                                <button
+                                    onClick={() => navigateMonth(1)}
+                                    className="p-1.5 rounded-lg hover:bg-white/10 transition-colors text-gray-400 hover:text-white"
+                                    title="Mes siguiente"
+                                >
+                                    <ChevronRight size={16} />
+                                </button>
+                            </div>
+
+                            {/* Project Filter — hidden on mobile */}
+                            {projects.length > 0 && (
+                                <select
+                                    value={filterProjectId}
+                                    onChange={e => handleProjectFilterChange(e.target.value)}
+                                    className="hidden md:block bg-indigo-950/60 border border-indigo-500/30 text-indigo-200 text-sm font-medium rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer shadow-[0_0_15px_rgba(99,102,241,0.2)] appearance-none"
+                                >
+                                    <option value="" className="bg-zinc-900 text-white">Todas las actividades</option>
+                                    <option value="__none__" className="bg-zinc-900 text-gray-400">📭 Sin Actividad</option>
+                                    {projects.map(p => <option key={p.id} value={p.id} className="bg-zinc-900 text-white">💼 {p.name}</option>)}
+                                </select>
+                            )}
                         </div>
 
-                        {/* Project Filter */}
-                        {projects.length > 0 && (
-                            <select
-                                value={filterProjectId}
-                                onChange={e => handleProjectFilterChange(e.target.value)}
-                                className="bg-indigo-950/60 border border-indigo-500/30 text-indigo-200 text-sm font-medium rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer shadow-[0_0_15px_rgba(99,102,241,0.2)] appearance-none"
-                            >
-                                <option value="" className="bg-zinc-900 text-white">Todas las actividades</option>
-                                <option value="__none__" className="bg-zinc-900 text-gray-400">📭 Sin Actividad</option>
-                                {projects.map(p => <option key={p.id} value={p.id} className="bg-zinc-900 text-white">💼 {p.name}</option>)}
-                            </select>
-                        )}
-                    </div>
-
-                    <div className="flex items-center gap-6">
                         <button onClick={() => {
                             setEditingTransactionId(null);
                             const cached = getCachedDefaults();
@@ -489,11 +490,51 @@ export default function TransactionsPage() {
                             });
                             setIsFormOpen(true);
                             setReturnTo(null);
-                        }} className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shadow-[0_0_15px_rgba(99,102,241,0.3)]">
-                            <Plus size={16} /> Nueva Transacción
+                        }} className="bg-indigo-600 hover:bg-indigo-500 text-white px-3 md:px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shadow-[0_0_15px_rgba(99,102,241,0.3)]">
+                            <Plus size={16} /> <span className="hidden sm:inline">Nueva Transacción</span>
                         </button>
                     </div>
+
+                    {/* Row 2 — Mobile-only: Month nav + project filter */}
+                    <div className="md:hidden flex items-center gap-2 px-4 pb-3 overflow-x-auto scrollbar-none">
+                        {/* Month Nav */}
+                        <div className="flex items-center gap-1 bg-white/5 border border-white/10 rounded-xl px-1 py-0.5 shrink-0">
+                            <button
+                                onClick={() => navigateMonth(-1)}
+                                className="p-1.5 rounded-lg hover:bg-white/10 transition-colors text-gray-400 hover:text-white"
+                            >
+                                <ChevronLeft size={16} />
+                            </button>
+                            <button
+                                onClick={() => goToCurrentMonth()}
+                                className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-medium transition-colors ${isCurrentMonth ? 'text-indigo-300' : 'text-amber-300'}`}
+                            >
+                                <Calendar size={12} />
+                                {formatMonthLabel(selectedMonth)}
+                            </button>
+                            <button
+                                onClick={() => navigateMonth(1)}
+                                className="p-1.5 rounded-lg hover:bg-white/10 transition-colors text-gray-400 hover:text-white"
+                            >
+                                <ChevronRight size={16} />
+                            </button>
+                        </div>
+
+                        {/* Project Filter on mobile */}
+                        {projects.length > 0 && (
+                            <select
+                                value={filterProjectId}
+                                onChange={e => handleProjectFilterChange(e.target.value)}
+                                className="flex-1 min-w-0 bg-indigo-950/60 border border-indigo-500/30 text-indigo-200 text-xs font-medium rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer appearance-none"
+                            >
+                                <option value="" className="bg-zinc-900 text-white">Todas las actividades</option>
+                                <option value="__none__" className="bg-zinc-900 text-gray-400">📭 Sin Actividad</option>
+                                {projects.map(p => <option key={p.id} value={p.id} className="bg-zinc-900 text-white">💼 {p.name}</option>)}
+                            </select>
+                        )}
+                    </div>
                 </header>
+
 
                 <div className="p-4 md:p-8 max-w-6xl mx-auto w-full space-y-8 pb-20">
                     {/* Activity List */}

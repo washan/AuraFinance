@@ -147,36 +147,91 @@ export default function Dashboard() {
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col h-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900/20 via-black to-black overflow-y-auto">
-        {/* Header */}
-        <header className="h-20 border-b border-white/10 flex items-center justify-between px-4 pl-16 md:px-8 shrink-0 bg-black/20 backdrop-blur-md sticky top-0 z-10">
-          <div className="flex items-center gap-6">
-            <h1 className="text-2xl font-light tracking-tight">Resumen</h1>
+        {/* Header — two rows on mobile, one row on desktop */}
+        <header className="border-b border-white/10 shrink-0 bg-black/20 backdrop-blur-md sticky top-0 z-10">
+          {/* Row 1: Title + icon buttons */}
+          <div className="h-16 flex items-center justify-between px-4 pl-16 md:px-8">
+            <div className="flex items-center gap-3">
+              <h1 className="text-xl md:text-2xl font-light tracking-tight">Resumen</h1>
 
-            {/* Month Navigator */}
-            <div className="flex items-center gap-1 bg-white/5 border border-white/10 rounded-xl px-1 py-0.5">
+              {/* Month Navigator — desktop only */}
+              <div className="hidden md:flex items-center gap-1 bg-white/5 border border-white/10 rounded-xl px-1 py-0.5">
+                <button onClick={() => navigateMonth(-1)} className="p-1.5 rounded-lg hover:bg-white/10 transition-colors text-gray-400 hover:text-white" title="Mes anterior">
+                  <ChevronLeft size={16} />
+                </button>
+                <button
+                  onClick={() => setSelectedMonth(getCurrentMonth())}
+                  className={`flex items-center gap-2 px-3 py-1 rounded-lg text-sm font-medium transition-colors ${isCurrentMonth ? 'text-indigo-300' : 'text-amber-300 hover:bg-white/10'}`}
+                  title={isCurrentMonth ? 'Mes actual' : 'Ir al mes actual'}
+                >
+                  <Calendar size={14} />
+                  {formatMonthLabel(selectedMonth)}
+                </button>
+                <button onClick={() => navigateMonth(1)} className="p-1.5 rounded-lg hover:bg-white/10 transition-colors text-gray-400 hover:text-white" title="Mes siguiente">
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+
+              {/* Project filter — desktop */}
+              {projects.length > 0 && (
+                <select
+                  value={selectedProjectId}
+                  onChange={e => setSelectedProjectId(e.target.value)}
+                  className="hidden md:block bg-indigo-950/60 border border-indigo-500/30 text-indigo-200 text-sm font-medium rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer shadow-[0_0_15px_rgba(99,102,241,0.2)] appearance-none"
+                >
+                  <option value="" className="bg-zinc-900 text-white">Todas las actividades</option>
+                  <option value="__none__" className="bg-zinc-900 text-gray-400">📭 Sin Actividad</option>
+                  {projects.map(p => <option key={p.id} value={p.id} className="bg-zinc-900 text-white">💼 {p.name}</option>)}
+                </select>
+              )}
+            </div>
+
+            <div className="flex items-center gap-3">
+              {/* Search — desktop only */}
+              <div className="relative group hidden md:block">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-indigo-400 transition-colors" />
+                <input
+                  type="text"
+                  placeholder="Buscar..."
+                  className="bg-white/5 border border-white/10 rounded-full py-2 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 w-48 transition-all"
+                />
+              </div>
+
+              {/* Bell — always visible */}
+              <button onClick={() => router.push('/inbox')} title="Ir al Buzón" className="p-2 rounded-full hover:bg-white/10 transition-colors">
+                <Bell className="w-5 h-5 text-gray-300" />
+              </button>
+
+              {/* Logout — icon on mobile, text on desktop */}
               <button
-                onClick={() => navigateMonth(-1)}
-                className="p-1.5 rounded-lg hover:bg-white/10 transition-colors text-gray-400 hover:text-white"
-                title="Mes anterior"
+                className="p-2 md:px-3 md:py-1.5 rounded-full md:rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors text-sm"
+                onClick={() => {
+                  localStorage.removeItem("token");
+                  localStorage.removeItem("user");
+                  router.push("/auth");
+                }}
+                title="Salir"
               >
+                <span className="hidden md:inline">Salir</span>
+                <Settings className="w-4 h-4 md:hidden" />
+              </button>
+            </div>
+          </div>
+
+          {/* Row 2 — Mobile only: month nav + project filter */}
+          <div className="md:hidden flex items-center gap-2 px-4 pb-3">
+            <div className="flex items-center gap-1 bg-white/5 border border-white/10 rounded-xl px-1 py-0.5 shrink-0">
+              <button onClick={() => navigateMonth(-1)} className="p-1.5 rounded-lg hover:bg-white/10 transition-colors text-gray-400">
                 <ChevronLeft size={16} />
               </button>
               <button
                 onClick={() => setSelectedMonth(getCurrentMonth())}
-                className={`flex items-center gap-2 px-3 py-1 rounded-lg text-sm font-medium transition-colors ${isCurrentMonth
-                  ? 'text-indigo-300'
-                  : 'text-amber-300 hover:bg-white/10'
-                  }`}
-                title={isCurrentMonth ? 'Mes actual' : 'Ir al mes actual'}
+                className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-medium transition-colors ${isCurrentMonth ? 'text-indigo-300' : 'text-amber-300'}`}
               >
-                <Calendar size={14} />
+                <Calendar size={12} />
                 {formatMonthLabel(selectedMonth)}
               </button>
-              <button
-                onClick={() => navigateMonth(1)}
-                className="p-1.5 rounded-lg hover:bg-white/10 transition-colors text-gray-400 hover:text-white"
-                title="Mes siguiente"
-              >
+              <button onClick={() => navigateMonth(1)} className="p-1.5 rounded-lg hover:bg-white/10 transition-colors text-gray-400">
                 <ChevronRight size={16} />
               </button>
             </div>
@@ -185,42 +240,13 @@ export default function Dashboard() {
               <select
                 value={selectedProjectId}
                 onChange={e => setSelectedProjectId(e.target.value)}
-                className="bg-indigo-950/60 border border-indigo-500/30 text-indigo-200 text-sm font-medium rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer shadow-[0_0_15px_rgba(99,102,241,0.2)] appearance-none"
+                className="flex-1 min-w-0 bg-indigo-950/60 border border-indigo-500/30 text-indigo-200 text-xs font-medium rounded-lg px-2 py-1.5 focus:outline-none appearance-none"
               >
                 <option value="" className="bg-zinc-900 text-white">Todas las actividades</option>
                 <option value="__none__" className="bg-zinc-900 text-gray-400">📭 Sin Actividad</option>
                 {projects.map(p => <option key={p.id} value={p.id} className="bg-zinc-900 text-white">💼 {p.name}</option>)}
               </select>
             )}
-          </div>
-
-          <div className="flex items-center gap-6">
-            <div className="relative group">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-indigo-400 transition-colors" />
-              <input
-                type="text"
-                placeholder="Buscar..."
-                className="bg-white/5 border border-white/10 rounded-full py-2 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 w-64 transition-all"
-              />
-            </div>
-
-            <button
-              onClick={() => router.push('/inbox')}
-              title="Ir al Buzón"
-              className="relative p-2 rounded-full hover:bg-white/10 transition-colors"
-            >
-              <Bell className="w-5 h-5 text-gray-300" />
-            </button>
-            <button
-              className="text-sm text-gray-400 hover:text-white"
-              onClick={() => {
-                localStorage.removeItem("token");
-                localStorage.removeItem("user");
-                router.push("/auth");
-              }}
-            >
-              Salir
-            </button>
           </div>
         </header>
 
