@@ -3,4 +3,11 @@ export declare class UsersController {
     private readonly usersService;
     constructor(usersService: UsersService);
     getProfile(req: any): any;
+    getHouseholdMembers(req: any): Promise<any[]>;
+    addHouseholdMember(req: any, body: {
+        email: string;
+        name: string;
+    }): Promise<{
+        message: string;
+    }>;
 }

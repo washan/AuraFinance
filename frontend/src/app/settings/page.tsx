@@ -47,9 +47,7 @@ export default function SettingsPage() {
     // Goals states
     const [goals, setGoals] = useState<any[]>([]);
     const [editingGoal, setEditingGoal] = useState<{ id: string; title: string; type?: string; description?: string; targetAmount?: number; targetDate?: string } | null>(null);
-
-    // Bank Connections states
-    const [connections, setConnections] = useState<any[]>([]);
+    const [newGoalTargetDate, setNewGoalTargetDate] = useState<Date | null>(null);
 
     // Inbox Rules states
     const [rules, setRules] = useState<any[]>([]);
@@ -76,13 +74,12 @@ export default function SettingsPage() {
     const fetchCatalogs = async (token: string) => {
         try {
             const hdrs = { Authorization: `Bearer ${token}` };
-            const [curRes, catRes, accRes, projRes, goalsRes, connRes, rulesRes, recRes] = await Promise.all([
+            const [curRes, catRes, accRes, projRes, goalsRes, rulesRes, recRes] = await Promise.all([
                 fetch(`${process.env.NEXT_PUBLIC_API_URL}/currencies`, { headers: hdrs }),
                 fetch(`${process.env.NEXT_PUBLIC_API_URL}/categories`, { headers: hdrs }),
                 fetch(`${process.env.NEXT_PUBLIC_API_URL}/accounts`, { headers: hdrs }),
                 fetch(`${process.env.NEXT_PUBLIC_API_URL}/projects`, { headers: hdrs }),
                 fetch(`${process.env.NEXT_PUBLIC_API_URL}/goals`, { headers: hdrs }),
-                fetch(`${process.env.NEXT_PUBLIC_API_URL}/inbox/connections`, { headers: hdrs }),
                 fetch(`${process.env.NEXT_PUBLIC_API_URL}/inbox-rules`, { headers: hdrs }),
                 fetch(`${process.env.NEXT_PUBLIC_API_URL}/recurring-events`, { headers: hdrs })
             ]);
@@ -91,7 +88,6 @@ export default function SettingsPage() {
             if (accRes.ok) setAccounts(await accRes.json());
             if (projRes.ok) setProjects(await projRes.json());
             if (goalsRes.ok) setGoals(await goalsRes.json());
-            if (connRes.ok) setConnections(await connRes.json());
             if (rulesRes.ok) setRules(await rulesRes.json());
             if (recRes.ok) setRecurringEvents(await recRes.json());
             setIsLoading(false);
@@ -377,7 +373,7 @@ export default function SettingsPage() {
         const description = (formData.get("description") as string) || "";
         const targetAmountStr = formData.get("targetAmount") as string;
         const targetAmount = targetAmountStr ? parseFloat(targetAmountStr) : undefined;
-        const targetDate = (formData.get("targetDate") as string) || undefined;
+        const targetDate = newGoalTargetDate ? format(newGoalTargetDate, 'yyyy-MM-dd') : undefined;
 
         const type = (formData.get("type") as string) || "savings";
 
@@ -389,6 +385,7 @@ export default function SettingsPage() {
         if (res.ok) {
             fetchCatalogs(token!);
             (e.target as HTMLFormElement).reset();
+            setNewGoalTargetDate(null);
             setToast({ message: "Meta de ahorro creada exitosamente.", type: "success" });
         } else {
             setToast({ message: "Error al crear la meta.", type: "error" });
@@ -423,44 +420,6 @@ export default function SettingsPage() {
             setToast({ message: "Meta eliminada.", type: "success" });
         } else {
             setToast({ message: "No se pudo eliminar la meta.", type: "error" });
-        }
-    };
-
-    // Bank Connections CRUD
-    const handleCreateConnection = async (e: React.FormEvent) => {
-        e.preventDefault();
-        const token = localStorage.getItem("token");
-        const formData = new FormData(e.target as HTMLFormElement);
-        const provider = formData.get("provider") as string;
-        const emailAddress = formData.get("emailAddress") as string;
-        const appPassword = formData.get("appPassword") as string;
-
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/inbox/connections`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-            body: JSON.stringify({ provider, emailAddress, appPassword })
-        });
-        if (res.ok) {
-            fetchCatalogs(token!);
-            (e.target as HTMLFormElement).reset();
-            setToast({ message: "Integración de correo configurada exitosamente.", type: "success" });
-        } else {
-            setToast({ message: "Error al configurar la integración.", type: "error" });
-        }
-    };
-
-    const handleDeleteConnection = async (id: string) => {
-        if (!window.confirm("¿Estás seguro de eliminar esta integración de correo? Se borrarán las transacciones del buzón asociadas pero no las transacciones confirmadas.")) return;
-        const token = localStorage.getItem("token");
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/inbox/connections/${id}/delete`, {
-            method: "POST",
-            headers: { Authorization: `Bearer ${token}` }
-        });
-        if (res.ok) {
-            fetchCatalogs(token!);
-            setToast({ message: "Integración eliminada.", type: "success" });
-        } else {
-            setToast({ message: "No se pudo eliminar la integración.", type: "error" });
         }
     };
 
@@ -675,12 +634,6 @@ export default function SettingsPage() {
                             onClick={() => setActiveTab("goals")}
                         >
                             Metas de Ahorro
-                        </button>
-                        <button
-                            className={`px-4 py-2 font-medium rounded-lg transition-colors ${activeTab === "connections" ? "bg-indigo-500/20 text-indigo-300" : "text-gray-400 hover:text-white hover:bg-white/5"}`}
-                            onClick={() => setActiveTab("connections")}
-                        >
-                            Integraciones
                         </button>
                         <button
                             className={`px-4 py-2 font-medium rounded-lg transition-colors flex items-center gap-2 ${activeTab === "rules" ? "bg-amber-500/20 text-amber-300" : "text-gray-400 hover:text-white hover:bg-white/5"}`}
@@ -1400,7 +1353,8 @@ export default function SettingsPage() {
                                         <div className="lg:col-span-1">
                                             <label className="block text-xs text-gray-400 mb-1">Fecha Límite (Opcional)</label>
                                             <DatePicker
-                                                name="targetDate"
+                                                selected={newGoalTargetDate}
+                                                onChange={(date: Date | null) => setNewGoalTargetDate(date)}
                                                 dateFormat="yyyy-MM-dd"
                                                 isClearable
                                                 placeholderText="Seleccionar fecha"
@@ -1415,67 +1369,6 @@ export default function SettingsPage() {
                                         <button type="submit" className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 h-[38px] lg:col-span-1 shadow-[0_0_10px_rgba(16,185,129,0.2)]">
                                             <Plus size={16} /> Crear
                                         </button>
-                                    </form>
-                                </div>
-                            </div>
-                        )}
-
-                        {activeTab === "connections" && (
-                            <div className="space-y-6">
-                                <div className="border-b border-white/10 pb-4">
-                                    <h3 className="text-lg font-medium">Buzón de Integraciones</h3>
-                                    <p className="text-sm text-gray-400 mt-1">Configura integraciones (Ej. IMAP de Gmail) para que el buzón lea automáticamente correos bancarios y los convierta en notificaciones a procesar.</p>
-                                </div>
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {connections.map(conn => (
-                                        <div key={conn.id} className="p-4 bg-black/40 border border-white/5 rounded-xl flex flex-col gap-3 group/conn">
-                                            <div className="flex justify-between items-start">
-                                                <div>
-                                                    <h4 className="font-bold text-lg text-white flex items-center gap-2">📧 {conn.provider}</h4>
-                                                    <p className="text-sm text-indigo-300 mt-1">{conn.emailAddress}</p>
-                                                    <div className="flex items-center gap-2 mt-2">
-                                                        <span className={`text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider font-bold ${conn.isActive ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-500'}`}>
-                                                            {conn.isActive ? 'Activo' : 'Inactivo'}
-                                                        </span>
-                                                        <span className="text-xs text-gray-500">Última sincronización: {conn.lastSyncAt ? format(new Date(conn.lastSyncAt), 'dd/MM/yyyy HH:mm') : 'Nunca'}</span>
-                                                    </div>
-                                                </div>
-                                                <div className="flex items-center gap-1 opacity-0 group-hover/conn:opacity-100 transition-opacity">
-                                                    <button onClick={() => handleDeleteConnection(conn.id)} className="p-1.5 bg-white/5 hover:bg-red-500/20 rounded-md text-gray-400 hover:text-red-400 transition-colors">
-                                                        <Trash2 size={16} />
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-
-                                <div className="pt-6 mt-6 border-t border-white/10 bg-indigo-900/10 p-4 rounded-xl">
-                                    <h4 className="text-md font-medium mb-4 text-indigo-300">Añadir Integración Gmail (IMAP)</h4>
-                                    <form onSubmit={handleCreateConnection} className="flex flex-col gap-4">
-                                        <div className="bg-black/50 p-4 rounded-lg border border-indigo-500/20 text-sm text-gray-300 space-y-2">
-                                            <p><strong>Paso 1:</strong> Entra a los ajustes de seguridad de tu cuenta de Google.</p>
-                                            <p><strong>Paso 2:</strong> Activa "Verificación en 2 pasos".</p>
-                                            <p><strong>Paso 3:</strong> Busca "Contraseñas de aplicaciones" y crea una nueva con el nombre "App Finanzas".</p>
-                                            <p className="text-amber-400">Pega esa contraseña de 16 letras (sin espacios) a continuación. Tu contraseña se guardará sólo en esta base de datos local conectada a tu app.</p>
-                                        </div>
-                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                            <input type="hidden" name="provider" value="GMAIL" />
-                                            <div>
-                                                <label className="block text-xs text-gray-400 mb-1">Correo Electrónico a Enlazar</label>
-                                                <input type="email" name="emailAddress" required className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="ejemplo@gmail.com" />
-                                            </div>
-                                            <div>
-                                                <label className="block text-xs text-gray-400 mb-1">App Password (Contraseña generada)</label>
-                                                <input type="password" name="appPassword" required className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="••••••••••••••••" />
-                                            </div>
-                                            <div className="flex flex-col justify-end">
-                                                <button type="submit" className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 h-[38px] shadow-[0_0_10px_rgba(99,102,241,0.2)]">
-                                                    <Plus size={16} /> Conectar
-                                                </button>
-                                            </div>
-                                        </div>
                                     </form>
                                 </div>
                             </div>

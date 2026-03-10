@@ -24,6 +24,21 @@ let UsersController = class UsersController {
     getProfile(req) {
         return req.user;
     }
+    async getHouseholdMembers(req) {
+        return this.usersService.getHouseholdMembers(req.user.householdId);
+    }
+    async addHouseholdMember(req, body) {
+        if (!body.email || !body.name) {
+            throw new common_1.BadRequestException('Email and name are required');
+        }
+        try {
+            await this.usersService.addHouseholdMember(req.user.userId, req.user.householdId, body.email.toLowerCase(), body.name);
+            return { message: 'Miembro agregado exitosamente' };
+        }
+        catch (error) {
+            throw new common_1.BadRequestException(error.message || 'Error al agregar miembro');
+        }
+    }
 };
 exports.UsersController = UsersController;
 __decorate([
@@ -34,6 +49,23 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], UsersController.prototype, "getProfile", null);
+__decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Get)('household/members'),
+    __param(0, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], UsersController.prototype, "getHouseholdMembers", null);
+__decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Post)('household/members'),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], UsersController.prototype, "addHouseholdMember", null);
 exports.UsersController = UsersController = __decorate([
     (0, common_1.Controller)('users'),
     __metadata("design:paramtypes", [users_service_1.UsersService])

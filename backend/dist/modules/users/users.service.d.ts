@@ -5,4 +5,6 @@ export declare class UsersService {
     constructor(prisma: PrismaService);
     findByEmail(email: string): Promise<User | null>;
     create(data: Prisma.UserCreateInput): Promise<User>;
+    getHouseholdMembers(householdId: string): Promise<any[]>;
+    addHouseholdMember(adminUserId: string, householdId: string, email: string, name: string): Promise<void>;
 }

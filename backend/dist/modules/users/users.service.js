@@ -27,6 +27,44 @@ let UsersService = class UsersService {
             data,
         });
     }
+    async getHouseholdMembers(householdId) {
+        return this.prisma.user.findMany({
+            where: { householdId },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                role: true,
+            }
+        });
+    }
+    async addHouseholdMember(adminUserId, householdId, email, name) {
+        const admin = await this.prisma.user.findUnique({ where: { id: adminUserId } });
+        if (!admin || admin.householdId !== householdId || admin.role !== 'ADMIN') {
+            throw new Error('Only household admins can add new members.');
+        }
+        const existingUser = await this.findByEmail(email);
+        if (existingUser) {
+            await this.prisma.user.update({
+                where: { id: existingUser.id },
+                data: {
+                    householdId: householdId,
+                    role: 'MEMBER'
+                }
+            });
+        }
+        else {
+            await this.prisma.user.create({
+                data: {
+                    email,
+                    name,
+                    householdId,
+                    role: 'MEMBER',
+                    passwordHash: '',
+                }
+            });
+        }
+    }
 };
 exports.UsersService = UsersService;
 exports.UsersService = UsersService = __decorate([

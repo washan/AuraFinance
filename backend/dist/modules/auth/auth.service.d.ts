@@ -26,6 +26,7 @@ export declare class AuthService {
             id: string;
             email: string;
             name: string;
+            role: string;
             householdId: string;
             baseCurrencySymbol: string;
         };
