@@ -12,7 +12,7 @@ import {
   CreditCard,
   TrendingUp,
   MoreHorizontal,
-  Settings,
+  LogOut,
   AlertCircle,
   ChevronLeft,
   ChevronRight,
@@ -213,7 +213,7 @@ export default function Dashboard() {
                 title="Salir"
               >
                 <span className="hidden md:inline">Salir</span>
-                <Settings className="w-4 h-4 md:hidden" />
+                <LogOut className="w-4 h-4 md:hidden" />
               </button>
             </div>
           </div>
