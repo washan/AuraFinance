@@ -250,7 +250,7 @@ export default function TransactionsPage() {
     useEffect(() => {
         if (formData.amountOriginal) {
             const amt = parseFloat(formData.amountOriginal);
-            const rate = parseFloat(formData.exchangeRate);
+            const rate = isMultiCurrency ? parseFloat(formData.exchangeRate) : 1.0;
             if (!isNaN(amt) && !isNaN(rate)) {
                 // Keep to 2 decimal places for input field display
                 setFormData(prev => ({ ...prev, amountBase: (amt * rate).toFixed(2) }));
@@ -258,7 +258,7 @@ export default function TransactionsPage() {
         } else {
             setFormData(prev => ({ ...prev, amountBase: "" }));
         }
-    }, [formData.amountOriginal, formData.exchangeRate]);
+    }, [formData.amountOriginal, formData.exchangeRate, isMultiCurrency]);
 
     // Default form currency to account currency when account changes (but not when pre-filling from inbox)
     useEffect(() => {
@@ -297,16 +297,20 @@ export default function TransactionsPage() {
             rawAmountOriginal = Math.abs(rawAmountOriginal);
         }
 
+        const validItemId = availableItems.some((i: any) => i.id === formData.itemId) ? formData.itemId : undefined;
+        const validProjectId = projects.some(p => p.id === formData.projectId) ? formData.projectId : undefined;
+        const validGoalId = goals.some(g => g.id === formData.goalId) ? formData.goalId : undefined;
+
         const payload = {
-            accountId: formData.accountId,
-            destinationAccountId: formData.type === 'transfer' ? formData.destinationAccountId : undefined,
-            goalId: (formData.type === 'transfer' || formData.type === 'expense') && formData.goalId ? formData.goalId : undefined,
+            accountId: accounts.some(a => a.id === formData.accountId) ? formData.accountId : undefined,
+            destinationAccountId: formData.type === 'transfer' && accounts.some(a => a.id === formData.destinationAccountId) ? formData.destinationAccountId : undefined,
+            goalId: (formData.type === 'transfer' || formData.type === 'expense') ? validGoalId : undefined,
             type: formData.type,
-            itemId: formData.itemId ? formData.itemId : undefined,
-            projectId: formData.type === 'transfer' ? undefined : (formData.projectId ? formData.projectId : undefined),
+            itemId: validItemId,
+            projectId: formData.type === 'transfer' ? undefined : validProjectId,
             amountOriginal: rawAmountOriginal.toString(),
             currencyOriginal: formData.currencyOriginal,
-            exchangeRate: formData.exchangeRate,
+            exchangeRate: isMultiCurrency ? formData.exchangeRate : "1.0",
             amountBase: rawAmountBase.toString(),
             transactionDate: formData.transactionDate,
             notes: formData.notes,
@@ -851,9 +855,29 @@ export default function TransactionsPage() {
 
                                 </div>
 
-                                <div className="pt-4 border-t border-white/10 flex justify-end gap-3 mt-6">
-                                    <button type="button" onClick={() => handleCloseModal(false)} className="px-4 py-2 rounded-lg text-sm font-medium text-gray-400 hover:text-white hover:bg-white/5 transition-colors">Cancelar</button>
-                                    <button type="submit" className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2 rounded-lg text-sm font-bold transition-colors shadow-[0_0_15px_rgba(99,102,241,0.3)]">Guardar</button>
+                                <div className="pt-4 border-t border-white/10 flex justify-between items-center mt-6">
+                                    <div>
+                                        {/* Real implementation */}
+                                        {editingTransactionId && (
+                                            <button
+                                                type="button"
+                                                onClick={(e) => {
+                                                    // handleDeleteTransaction has its own confirmation logic
+                                                    handleDeleteTransaction(editingTransactionId, e as any);
+                                                    handleCloseModal(false); // Close modal right after clicking delete
+                                                }}
+                                                className="p-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors flex items-center gap-2"
+                                                title="Eliminar Transacción"
+                                            >
+                                                <Trash2 size={18} />
+                                                <span className="text-sm font-medium hidden sm:inline">Eliminar</span>
+                                            </button>
+                                        )}
+                                    </div>
+                                    <div className="flex gap-3">
+                                        <button type="button" onClick={() => handleCloseModal(false)} className="px-4 py-2 rounded-lg text-sm font-medium text-gray-400 hover:text-white hover:bg-white/5 transition-colors">Cancelar</button>
+                                        <button type="submit" className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2 rounded-lg text-sm font-bold transition-colors shadow-[0_0_15px_rgba(99,102,241,0.3)]">Guardar</button>
+                                    </div>
                                 </div>
                             </form>
                         </div>
