@@ -153,54 +153,56 @@ export default function InboxPage() {
                     ) : (
                         <div className="space-y-4">
                             {transactions.map(tx => (
-                                <div key={tx.id} className={`bg-black/40 border rounded-2xl p-6 hover:bg-white/5 transition-colors flex items-center justify-between group relative overflow-hidden ${tx.source === 'RECURRING' ? 'border-cyan-500/30' : tx.matchedRule ? 'border-amber-500/30' : 'border-white/10'}`}>
+                                <div key={tx.id} className={`bg-black/40 border rounded-2xl p-4 md:p-6 hover:bg-white/5 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-0 group relative overflow-hidden ${tx.source === 'RECURRING' ? 'border-cyan-500/30' : tx.matchedRule ? 'border-amber-500/30' : 'border-white/10'}`}>
                                     {/* Left highlight */}
                                     <div className={`absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b ${tx.source === 'RECURRING' ? 'from-cyan-400 to-blue-500' : tx.matchedRule ? 'from-amber-400 to-orange-500' : 'from-indigo-500 to-purple-500'}`}></div>
 
-                                    <div className="flex items-center gap-6">
-                                        <div className={`w-12 h-12 rounded-full flex items-center justify-center ${tx.source === 'RECURRING' ? 'bg-cyan-500/10 border border-cyan-500/20 text-cyan-400' : tx.matchedRule ? 'bg-amber-500/10 border border-amber-500/20 text-amber-400' : 'bg-indigo-500/10 border border-indigo-500/20 text-indigo-400'}`}>
-                                            {tx.source === 'RECURRING' ? <RefreshCw size={24} /> : tx.matchedRule ? <Zap size={24} /> : <Bell size={24} />}
+                                    {/* Primary Info container */}
+                                    <div className="flex items-start md:items-center gap-4 md:gap-6 flex-1 min-w-0 pr-2">
+                                        <div className={`w-10 h-10 md:w-12 md:h-12 shrink-0 rounded-full flex items-center justify-center ${tx.source === 'RECURRING' ? 'bg-cyan-500/10 border border-cyan-500/20 text-cyan-400' : tx.matchedRule ? 'bg-amber-500/10 border border-amber-500/20 text-amber-400' : 'bg-indigo-500/10 border border-indigo-500/20 text-indigo-400'}`}>
+                                            {tx.source === 'RECURRING' ? <RefreshCw size={20} className="md:w-6 md:h-6" /> : tx.matchedRule ? <Zap size={20} className="md:w-6 md:h-6" /> : <Bell size={20} className="md:w-6 md:h-6" />}
                                         </div>
-                                        <div>
-                                            <div className="flex items-center gap-2">
-                                                <h3 className="text-lg font-medium text-white">{tx.merchant}</h3>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2 flex-wrap">
+                                                <h3 className="text-base md:text-lg font-medium text-white truncate max-w-full">{tx.merchant}</h3>
                                                 {tx.source === 'RECURRING' && (
-                                                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300 border border-cyan-500/25 font-semibold flex items-center gap-1">
+                                                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300 border border-cyan-500/25 font-semibold flex items-center gap-1 shrink-0">
                                                         <RefreshCw size={10} /> Recurrente
                                                     </span>
                                                 )}
                                                 {tx.matchedRule && (
-                                                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/25 font-semibold flex items-center gap-1">
+                                                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/25 font-semibold flex items-center gap-1 shrink-0">
                                                         <Zap size={10} /> {tx.matchedRule.name}
                                                     </span>
                                                 )}
                                             </div>
-                                            <div className="flex items-center gap-3 mt-1 text-sm text-gray-400">
+                                            <div className="flex items-center gap-2 mt-1 text-xs md:text-sm text-gray-400 flex-wrap">
                                                 <span>{format(new Date(tx.date), 'MMM dd, yyyy')}</span>
-                                                <span className="w-1 h-1 rounded-full bg-white/20"></span>
-                                                <span className="font-mono text-xs px-2 py-0.5 bg-white/5 rounded border border-white/10">{tx.accountInfo || 'N/A'}</span>
+                                                <span className="w-1 h-1 rounded-full bg-white/20 hidden sm:block"></span>
+                                                <span className="font-mono text-[10px] md:text-xs px-2 py-0.5 bg-white/5 rounded border border-white/10">{tx.accountInfo || 'N/A'}</span>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="flex items-center gap-8">
-                                        <div className="text-right">
-                                            <p className="font-bold text-xl text-white">
+                                    {/* Action and Amount container */}
+                                    <div className="flex items-center justify-between md:justify-end gap-4 md:gap-8 w-full md:w-auto border-t border-white/5 md:border-none pt-4 md:pt-0">
+                                        <div className="text-left md:text-right shrink-0">
+                                            <p className="font-bold text-lg md:text-xl text-white">
                                                 {formatCurrency(parseFloat(tx.amount), tx.currency === 'CRC' ? '₡' : '$')}
                                             </p>
-                                            <p className="text-xs text-gray-500">{tx.currency}</p>
+                                            <p className="text-[10px] md:text-xs text-gray-500">{tx.currency}</p>
                                         </div>
 
-                                        <div className="flex items-center gap-2">
+                                        <div className="flex items-center gap-2 shrink-0">
                                             <button
                                                 onClick={() => handleInclude(tx)}
-                                                className="bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/30 px-4 py-2 rounded-xl text-sm font-semibold transition-all flex items-center gap-2"
+                                                className="bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/30 px-3 md:px-4 py-2 rounded-xl text-xs md:text-sm font-semibold transition-all flex items-center gap-1 md:gap-2"
                                             >
-                                                <Check size={16} /> Incluir
+                                                <Check size={16} /> <span className="hidden sm:inline">Incluir</span>
                                             </button>
                                             <button
                                                 onClick={() => handleDismiss(tx.id)}
-                                                className="bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 px-3 py-2 rounded-xl text-sm font-medium transition-all"
+                                                className="bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 px-3 py-2 rounded-xl text-xs md:text-sm font-medium transition-all"
                                                 title="Descartar"
                                             >
                                                 <X size={16} />
