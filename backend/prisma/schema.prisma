@@ -41,6 +41,7 @@ model User {
   transactions Transaction[]
   bankConnections BankConnection[]
   parameters   Parameter[]
+  plannedTransactions PlannedTransaction[]
 }
 
 model Currency {
@@ -75,6 +76,7 @@ model Account {
   transactions         Transaction[] @relation("SourceAccount")
   destinationTransfers Transaction[] @relation("DestinationAccount")
   inboxRules           InboxRule[]
+  plannedTransactions  PlannedTransaction[] @relation("PlannedSourceAccount")
 }
 
 model Project {
@@ -85,6 +87,7 @@ model Project {
   description  String?
   transactions Transaction[]
   inboxRules   InboxRule[]
+  plannedTransactions PlannedTransaction[]
 }
 
 model Category {
@@ -105,6 +108,7 @@ model Item {
   name         String
   transactions Transaction[]
   inboxRules   InboxRule[]
+  plannedTransactions PlannedTransaction[]
 }
 
 model Transaction {
@@ -155,6 +159,7 @@ model Goal {
   tasks        GoalTask[]
   transactions Transaction[]
   inboxRules   InboxRule[]
+  plannedTransactions PlannedTransaction[]
 }
 
 model GoalTask {
@@ -250,4 +255,27 @@ model Parameter {
   updatedAt   DateTime  @updatedAt
 
   @@id([code, userId])
+}
+
+model PlannedTransaction {
+  id                   String   @id @default(uuid()) @db.Uuid
+  userId               String   @db.Uuid
+  user                 User     @relation(fields: [userId], references: [id])
+  accountId            String?  @db.Uuid
+  account              Account? @relation("PlannedSourceAccount", fields: [accountId], references: [id])
+  itemId               String?  @db.Uuid
+  item                 Item?    @relation(fields: [itemId], references: [id])
+  projectId            String?  @db.Uuid
+  project              Project? @relation(fields: [projectId], references: [id])
+  goalId               String?  @db.Uuid
+  goal                 Goal?    @relation(fields: [goalId], references: [id])
+  type                 String   @default("expense") // 'expense', 'income'
+  amount               Decimal  @db.Decimal(19, 4)
+  currency             String
+  plannedDate          DateTime
+  status               String   @default("PENDING") // PENDING, COMPLETED, CANCELLED
+  notes                String?  @db.Text
+  transactionId        String?  @db.Uuid // ID de la transacción real vinculada
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 }

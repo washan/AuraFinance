@@ -16,9 +16,10 @@ import { InboxRulesModule } from './modules/inbox-rules/inbox-rules.module';
 import { RecurringEventsModule } from './modules/recurring-events/recurring-events.module';
 import { ParametersModule } from './modules/parameters/parameters.module';
 import { BackupModule } from './modules/backup/backup.module';
+import { PlannedTransactionsModule } from './modules/planned-transactions/planned-transactions.module';
 
 @Module({
-  imports: [UsersModule, AuthModule, PrismaModule, AccountsModule, TransactionsModule, CurrenciesModule, CategoriesModule, DashboardModule, ProjectsModule, GoalsModule, InboxModule, InboxRulesModule, RecurringEventsModule, ParametersModule, BackupModule],
+  imports: [UsersModule, AuthModule, PrismaModule, AccountsModule, TransactionsModule, CurrenciesModule, CategoriesModule, DashboardModule, ProjectsModule, GoalsModule, InboxModule, InboxRulesModule, RecurringEventsModule, ParametersModule, BackupModule, PlannedTransactionsModule],
   controllers: [AppController],
   providers: [AppService],
 })

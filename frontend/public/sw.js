@@ -1,4 +1,4 @@
-const CACHE_NAME = 'aura-finance-v1';
+const CACHE_NAME = 'aura-finance-v1.2';
 
 // Static assets to cache on install
 const STATIC_ASSETS = [

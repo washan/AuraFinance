@@ -26,6 +26,8 @@ import GoalSpeedometer from "@/components/GoalSpeedometer";
 import BreakdownWidget from "@/components/BreakdownWidget";
 import TrendWidget from "@/components/TrendWidget";
 import AccountsWidget from "@/components/AccountsWidget";
+import PlannedTransactionsWidget from "@/components/PlannedTransactionsWidget";
+import { Toast, ToastType } from "@/components/ui/toast";
 
 export default function Dashboard() {
   const router = useRouter();
@@ -37,6 +39,12 @@ export default function Dashboard() {
   const [recentTransactions, setRecentTransactions] = useState<any[]>([]);
   const [projects, setProjects] = useState<any[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState<string>("");
+
+  const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
+
+  const showToast = (message: string, type: ToastType = 'success') => {
+    setToast({ message, type });
+  };
 
   // Month navigation: format "YYYY-MM"
   const getCurrentMonth = () => {
@@ -142,6 +150,13 @@ export default function Dashboard() {
 
   return (
     <div className="flex h-screen bg-black text-white font-sans overflow-hidden">
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
       {/* Sidebar Component */}
       <Sidebar />
 
@@ -423,6 +438,13 @@ export default function Dashboard() {
                   />
                 )}
               </div>
+
+              {/* Planned Transactions / CRM  - new Feature! */}
+              <PlannedTransactionsWidget 
+                currencySymbol={metrics.currencySymbol} 
+                onToast={showToast}
+                onTransactionRealized={() => fetchDashboardData(localStorage.getItem('token')!, selectedProjectId, selectedMonth)} 
+              />
 
               {/* Trend Widget — full width */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
