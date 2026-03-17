@@ -12,7 +12,8 @@ import {
     Settings,
     Bell,
     Menu,
-    X
+    X,
+    Box
 } from "lucide-react";
 import { Toast, ToastType } from "./ui/toast";
 
@@ -92,6 +93,7 @@ export function Sidebar() {
                     <NavItem icon={<LayoutDashboard size={20} />} label="Panel" path="/" />
                     <NavItem icon={<ArrowRightLeft size={20} />} label="Transacciones" path="/transactions" />
                     <NavItem icon={<PieChart size={20} />} label="Presupuestos (Pronto)" path="#" />
+                    <NavItem icon={<Box size={20} />} label="Patrimonio" path="/assets" />
                     <NavItem icon={<Bell size={20} />} label="Buzón" path="/inbox" />
                 </nav>
             </div>

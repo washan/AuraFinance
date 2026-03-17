@@ -27,6 +27,7 @@ model Household {
   bankConnections BankConnection[]
   inboxRules  InboxRule[]
   recurringEvents RecurringEvent[]
+  assets      Asset[]
 }
 
 model User {
@@ -278,4 +279,19 @@ model PlannedTransaction {
   transactionId        String?  @db.Uuid // ID de la transacción real vinculada
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
+}
+
+model Asset {
+  id           String    @id @default(uuid()) @db.Uuid
+  householdId  String    @db.Uuid
+  household    Household @relation(fields: [householdId], references: [id])
+  name         String
+  category     String?
+  quantity     Decimal   @default(1) @db.Decimal(19, 4)
+  unitPrice    Decimal   @db.Decimal(19, 4)
+  currency     String    @default("CRC")
+  notes        String?   @db.Text
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 }

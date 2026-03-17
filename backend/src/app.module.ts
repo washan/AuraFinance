@@ -17,9 +17,10 @@ import { RecurringEventsModule } from './modules/recurring-events/recurring-even
 import { ParametersModule } from './modules/parameters/parameters.module';
 import { BackupModule } from './modules/backup/backup.module';
 import { PlannedTransactionsModule } from './modules/planned-transactions/planned-transactions.module';
+import { AssetsModule } from './modules/assets/assets.module';
 
 @Module({
-  imports: [UsersModule, AuthModule, PrismaModule, AccountsModule, TransactionsModule, CurrenciesModule, CategoriesModule, DashboardModule, ProjectsModule, GoalsModule, InboxModule, InboxRulesModule, RecurringEventsModule, ParametersModule, BackupModule, PlannedTransactionsModule],
+  imports: [UsersModule, AuthModule, PrismaModule, AccountsModule, TransactionsModule, CurrenciesModule, CategoriesModule, DashboardModule, ProjectsModule, GoalsModule, InboxModule, InboxRulesModule, RecurringEventsModule, ParametersModule, BackupModule, PlannedTransactionsModule, AssetsModule],
   controllers: [AppController],
   providers: [AppService],
 })
