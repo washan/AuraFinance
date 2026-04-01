@@ -18,7 +18,7 @@ let BackupService = class BackupService {
         this.prisma = prisma;
     }
     async exportData(userId, householdId) {
-        const [user, currencies, categories, accounts, projects, goals, budgets, inboxRules, recurringEvents, parameters, transactions] = await Promise.all([
+        const [user, currencies, categories, accounts, projects, goals, budgets, inboxRules, recurringEvents, parameters, transactions, plannedTransactions, assets, instruments, investmentTransactions] = await Promise.all([
             this.prisma.user.findUnique({ where: { id: userId } }),
             this.prisma.currency.findMany({ where: { householdId } }),
             this.prisma.category.findMany({ where: { householdId }, include: { items: true } }),
@@ -29,11 +29,15 @@ let BackupService = class BackupService {
             this.prisma.inboxRule.findMany({ where: { householdId } }),
             this.prisma.recurringEvent.findMany({ where: { householdId } }),
             this.prisma.parameter.findMany({ where: { userId } }),
-            this.prisma.transaction.findMany({ where: { user: { householdId } } })
+            this.prisma.transaction.findMany({ where: { user: { householdId } } }),
+            this.prisma.plannedTransaction.findMany({ where: { user: { householdId } } }),
+            this.prisma.asset.findMany({ where: { householdId } }),
+            this.prisma.instrument.findMany({ where: { householdId } }),
+            this.prisma.investmentTransaction.findMany({ where: { account: { householdId } } })
         ]);
         return {
             backupDate: new Date().toISOString(),
-            version: '1.0',
+            version: '1.1',
             data: {
                 user,
                 currencies,
@@ -45,16 +49,22 @@ let BackupService = class BackupService {
                 inboxRules,
                 recurringEvents,
                 parameters,
-                transactions
+                transactions,
+                plannedTransactions,
+                assets,
+                instruments,
+                investmentTransactions
             }
         };
     }
     async importData(userId, householdId, backupData) {
-        if (!backupData || backupData.version !== '1.0' || !backupData.data) {
+        if (!backupData || !['1.0', '1.1'].includes(backupData.version) || !backupData.data) {
             throw new common_1.BadRequestException('Formato de backup inválido o versión no soportada.');
         }
         const data = backupData.data;
         return this.prisma.$transaction(async (tx) => {
+            await tx.investmentTransaction.deleteMany({ where: { account: { householdId } } });
+            await tx.plannedTransaction.deleteMany({ where: { user: { householdId } } });
             await tx.transaction.deleteMany({ where: { user: { householdId } } });
             await tx.inboxRule.deleteMany({ where: { householdId } });
             await tx.recurringEvent.deleteMany({ where: { householdId } });
@@ -64,6 +74,8 @@ let BackupService = class BackupService {
             await tx.project.deleteMany({ where: { householdId } });
             await tx.item.deleteMany({ where: { category: { householdId } } });
             await tx.category.deleteMany({ where: { householdId } });
+            await tx.asset.deleteMany({ where: { householdId } });
+            await tx.instrument.deleteMany({ where: { householdId } });
             await tx.account.deleteMany({ where: { householdId } });
             await tx.currency.deleteMany({ where: { householdId } });
             await tx.parameter.deleteMany({ where: { userId } });
@@ -112,6 +124,18 @@ let BackupService = class BackupService {
             }
             if (data.transactions?.length) {
                 await tx.transaction.createMany({ data: data.transactions });
+            }
+            if (data.plannedTransactions?.length) {
+                await tx.plannedTransaction.createMany({ data: data.plannedTransactions });
+            }
+            if (data.assets?.length) {
+                await tx.asset.createMany({ data: data.assets });
+            }
+            if (data.instruments?.length) {
+                await tx.instrument.createMany({ data: data.instruments });
+            }
+            if (data.investmentTransactions?.length) {
+                await tx.investmentTransaction.createMany({ data: data.investmentTransactions });
             }
             return { message: 'Restauración completada con éxito.' };
         });

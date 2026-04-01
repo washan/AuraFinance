@@ -20,6 +20,8 @@ export default function AccountPage() {
     
     // Connections states
     const [connections, setConnections] = useState<any[]>([]);
+    const [geminiApiKey, setGeminiApiKey] = useState("");
+    const [hasGeminiKey, setHasGeminiKey] = useState(false);
 
     useEffect(() => {
         const token = localStorage.getItem("token");
@@ -36,13 +38,21 @@ export default function AccountPage() {
     const fetchData = async (token: string) => {
         try {
             const hdrs = { Authorization: `Bearer ${token}` };
-            const [membersRes, connRes] = await Promise.all([
+            const [membersRes, connRes, geminiRes] = await Promise.all([
                 fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/household/members`, { headers: hdrs }),
                 fetch(`${process.env.NEXT_PUBLIC_API_URL}/inbox/connections`, { headers: hdrs }),
+                fetch(`${process.env.NEXT_PUBLIC_API_URL}/parameters/GEMINI_API_KEY`, { headers: hdrs }),
             ]);
             
             if (membersRes.ok) setMembers(await membersRes.json());
             if (connRes.ok) setConnections(await connRes.json());
+            if (geminiRes.ok) {
+                const data = await geminiRes.json();
+                if (data && data.value) {
+                    setHasGeminiKey(true);
+                    setGeminiApiKey(data.value);
+                }
+            }
             
             setIsLoading(false);
         } catch (e) {
@@ -160,6 +170,22 @@ export default function AccountPage() {
         }
     };
 
+    const handleSaveGeminiKey = async (e: React.FormEvent) => {
+        e.preventDefault();
+        const token = localStorage.getItem("token");
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/parameters/GEMINI_API_KEY`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ value: geminiApiKey, description: "Clave API de Google Gemini para Asesor de Inversiones IA" })
+        });
+        if (res.ok) {
+            setToast({ message: "Clave de Gemini guardada exitosamente.", type: "success" });
+            fetchData(token!);
+        } else {
+            setToast({ message: "Error al guardar la clave.", type: "error" });
+        }
+    };
+
     const handleDeleteConnection = async (id: string) => {
         if (!window.confirm("¿Estás seguro de eliminar esta integración de correo? Se borrarán las transacciones del buzón asociadas pero no las transacciones confirmadas.")) return;
         const token = localStorage.getItem("token");
@@ -234,7 +260,7 @@ export default function AccountPage() {
                             className={`px-4 py-2 font-medium rounded-lg transition-colors whitespace-nowrap flex items-center gap-2 ${activeTab === "connections" ? "bg-indigo-500/20 text-indigo-300" : "text-gray-400 hover:text-white hover:bg-white/5"}`}
                             onClick={() => setActiveTab("connections")}
                         >
-                            <Mail size={18} /> Integraciones de Correo
+                            <Zap size={18} /> Integraciones / IA
                         </button>
                         <button
                             className={`px-4 py-2 font-medium rounded-lg transition-colors whitespace-nowrap flex items-center gap-2 ${activeTab === "backup" ? "bg-indigo-500/20 text-indigo-300" : "text-gray-400 hover:text-white hover:bg-white/5"}`}
@@ -356,6 +382,33 @@ export default function AccountPage() {
                                             <div className="flex flex-col justify-end">
                                                 <button type="submit" className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 h-[38px] shadow-[0_0_10px_rgba(99,102,241,0.2)]">
                                                     <Plus size={16} /> Conectar
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+
+                                {/* Gemini API Key Editor */}
+                                <div className="pt-6 mt-6 border-t border-white/10 bg-indigo-900/10 p-4 rounded-xl">
+                                    <div className="flex justify-between items-start mb-4">
+                                        <h4 className="text-md font-medium text-indigo-300">Inteligencia Artificial (Google Gemini)</h4>
+                                        <span className={`text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider font-bold ${hasGeminiKey ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-500'}`}>
+                                            {hasGeminiKey ? 'Activo' : 'Inactivo'}
+                                        </span>
+                                    </div>
+                                    <form onSubmit={handleSaveGeminiKey} className="flex flex-col gap-4">
+                                        <div className="bg-black/50 p-4 rounded-lg border border-indigo-500/20 text-sm text-gray-300 space-y-2">
+                                            <p>Configura tu propia clave del API de Google Gemini para habilitar el Asesor Financiero con Inteligencia Artificial.</p>
+                                            <p>Consigue tu clave gratuita en <a href="https://aistudio.google.com" target="_blank" className="text-indigo-400 underline">Google AI Studio</a>.</p>
+                                        </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                            <div className="md:col-span-3">
+                                                <label className="block text-xs text-gray-400 mb-1">GEMINI_API_KEY</label>
+                                                <input type="password" value={geminiApiKey} onChange={e => setGeminiApiKey(e.target.value)} required className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="AIzaSy..." />
+                                            </div>
+                                            <div className="flex flex-col justify-end">
+                                                <button type="submit" className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 h-[38px] shadow-[0_0_10px_rgba(99,102,241,0.2)]">
+                                                    <Check size={16} /> Guardar Clave
                                                 </button>
                                             </div>
                                         </div>

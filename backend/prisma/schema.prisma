@@ -28,6 +28,7 @@ model Household {
   inboxRules  InboxRule[]
   recurringEvents RecurringEvent[]
   assets      Asset[]
+  instruments Instrument[]
 }
 
 model User {
@@ -78,6 +79,7 @@ model Account {
   destinationTransfers Transaction[] @relation("DestinationAccount")
   inboxRules           InboxRule[]
   plannedTransactions  PlannedTransaction[] @relation("PlannedSourceAccount")
+  investmentTransactions InvestmentTransaction[]
 }
 
 model Project {
@@ -294,4 +296,34 @@ model Asset {
   isActive     Boolean   @default(true)
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
+}
+
+model Instrument {
+  id           String    @id @default(uuid()) @db.Uuid
+  householdId  String    @db.Uuid
+  household    Household @relation(fields: [householdId], references: [id])
+  symbol       String    // e.g. VUAA.L
+  name         String
+  currency     String    @default("USD")
+  type         String    @default("stock") // stock, etf, crypto
+  transactions InvestmentTransaction[]
+
+  @@unique([householdId, symbol])
+}
+
+model InvestmentTransaction {
+  id           String     @id @default(uuid()) @db.Uuid
+  accountId    String     @db.Uuid
+  account      Account    @relation(fields: [accountId], references: [id])
+  instrumentId String     @db.Uuid
+  instrument   Instrument @relation(fields: [instrumentId], references: [id])
+  type         String     // BUY, SELL, DIVIDEND
+  quantity     Decimal    @db.Decimal(19, 6)
+  price        Decimal    @db.Decimal(19, 4) // Price per share at transaction time
+  commission   Decimal    @default(0) @db.Decimal(19, 4)
+  currency     String     @default("USD")
+  date         DateTime
+  notes        String?    @db.Text
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
 }

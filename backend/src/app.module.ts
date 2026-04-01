@@ -18,9 +18,9 @@ import { ParametersModule } from './modules/parameters/parameters.module';
 import { BackupModule } from './modules/backup/backup.module';
 import { PlannedTransactionsModule } from './modules/planned-transactions/planned-transactions.module';
 import { AssetsModule } from './modules/assets/assets.module';
-
+import { InvestmentsModule } from './modules/investments/investments.module';
 @Module({
-  imports: [UsersModule, AuthModule, PrismaModule, AccountsModule, TransactionsModule, CurrenciesModule, CategoriesModule, DashboardModule, ProjectsModule, GoalsModule, InboxModule, InboxRulesModule, RecurringEventsModule, ParametersModule, BackupModule, PlannedTransactionsModule, AssetsModule],
+  imports: [UsersModule, AuthModule, PrismaModule, AccountsModule, TransactionsModule, CurrenciesModule, CategoriesModule, DashboardModule, ProjectsModule, GoalsModule, InboxModule, InboxRulesModule, RecurringEventsModule, ParametersModule, BackupModule, PlannedTransactionsModule, AssetsModule, InvestmentsModule],
   controllers: [AppController],
   providers: [AppService],
 })

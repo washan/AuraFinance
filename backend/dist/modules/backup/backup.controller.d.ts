@@ -128,6 +128,58 @@ export declare class BackupController {
                 status: string;
                 notes: string | null;
             }[];
+            plannedTransactions: {
+                currency: string;
+                id: string;
+                type: string;
+                accountId: string | null;
+                userId: string;
+                itemId: string | null;
+                projectId: string | null;
+                goalId: string | null;
+                status: string;
+                notes: string | null;
+                amount: import("@prisma/client/runtime/library").Decimal;
+                transactionId: string | null;
+                createdAt: Date;
+                updatedAt: Date;
+                plannedDate: Date;
+            }[];
+            assets: {
+                currency: string;
+                category: string | null;
+                name: string;
+                id: string;
+                householdId: string;
+                isActive: boolean;
+                notes: string | null;
+                createdAt: Date;
+                updatedAt: Date;
+                quantity: import("@prisma/client/runtime/library").Decimal;
+                unitPrice: import("@prisma/client/runtime/library").Decimal;
+            }[];
+            instruments: {
+                symbol: string;
+                currency: string;
+                name: string;
+                id: string;
+                householdId: string;
+                type: string;
+            }[];
+            investmentTransactions: {
+                currency: string;
+                id: string;
+                type: string;
+                accountId: string;
+                notes: string | null;
+                date: Date;
+                createdAt: Date;
+                updatedAt: Date;
+                quantity: import("@prisma/client/runtime/library").Decimal;
+                instrumentId: string;
+                price: import("@prisma/client/runtime/library").Decimal;
+                commission: import("@prisma/client/runtime/library").Decimal;
+            }[];
         };
     }>;
     importData(req: any, file: Express.Multer.File): Promise<{
