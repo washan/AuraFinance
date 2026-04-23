@@ -238,7 +238,7 @@ export default function InvestmentsPage() {
                         )}
                         {!aiInsight && !loadingAi && !aiError && (
                             <div className="text-center py-6 text-gray-500 text-sm relative z-10">
-                                Haz clic en "Generar Análisis" para recibir consejos personalizados sobre tus inversiones actuales.
+                                Haz clic en &quot;Generar Análisis&quot; para recibir consejos personalizados sobre tus inversiones actuales.
                             </div>
                         )}
                     </div>
