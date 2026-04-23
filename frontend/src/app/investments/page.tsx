@@ -128,32 +128,77 @@ export default function InvestmentsPage() {
                     {/* Summary Cards */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div className="bg-white/5 border border-white/10 rounded-3xl p-6 backdrop-blur-sm flex flex-col justify-between relative overflow-hidden group">
-                            <div className="absolute -right-6 -top-6 w-24 h-24 bg-indigo-500/10 rounded-full blur-2xl group-hover:bg-indigo-500/20 transition-all"></div>
-                            <h3 className="text-sm font-medium text-gray-400 mb-2">Valor Actual Total</h3>
-                            <div className="flex items-baseline gap-2">
-                                <span className="text-4xl font-light tracking-tight text-white">{formatCurrency(portfolio?.totalMarketValue || 0)}</span>
+                            <div>
+                                <div className="absolute -right-6 -top-6 w-24 h-24 bg-indigo-500/10 rounded-full blur-2xl group-hover:bg-indigo-500/20 transition-all"></div>
+                                <h3 className="text-sm font-medium text-gray-400 mb-2">Valor Actual Total</h3>
+                                <div className="flex items-baseline gap-2">
+                                    <span className="text-4xl font-light tracking-tight text-white">{formatCurrency(portfolio?.totalMarketValue || 0)}</span>
+                                </div>
+                            </div>
+                            <div className="mt-4 flex flex-col gap-1.5 border-t border-white/5 pt-3">
+                                {portfolio?.positions.map(pos => (
+                                    <div key={pos.instrumentId} className="flex justify-between items-center text-xs">
+                                        <span className="text-gray-400">{pos.symbol}</span>
+                                        <span className="text-gray-300">
+                                            {formatCurrency(pos.marketValue)}
+                                            <span className="text-gray-500 ml-1">
+                                                ({portfolio.totalMarketValue ? ((pos.marketValue / portfolio.totalMarketValue) * 100).toFixed(1) : 0}%)
+                                            </span>
+                                        </span>
+                                    </div>
+                                ))}
                             </div>
                         </div>
 
                         <div className="bg-white/5 border border-white/10 rounded-3xl p-6 backdrop-blur-sm flex flex-col justify-between relative overflow-hidden group">
-                            <h3 className="text-sm font-medium text-gray-400 mb-2">Monto Total Invertido</h3>
-                            <div className="flex items-baseline gap-2">
-                                <span className="text-3xl font-light tracking-tight text-gray-200">{formatCurrency(portfolio?.totalInvested || 0)}</span>
+                            <div>
+                                <h3 className="text-sm font-medium text-gray-400 mb-2">Monto Total Invertido</h3>
+                                <div className="flex items-baseline gap-2">
+                                    <span className="text-3xl font-light tracking-tight text-gray-200">{formatCurrency(portfolio?.totalInvested || 0)}</span>
+                                </div>
+                            </div>
+                            <div className="mt-4 flex flex-col gap-1.5 border-t border-white/5 pt-3">
+                                {portfolio?.positions.map(pos => (
+                                    <div key={pos.instrumentId} className="flex justify-between items-center text-xs">
+                                        <span className="text-gray-400">{pos.symbol}</span>
+                                        <span className="text-gray-300">
+                                            {formatCurrency(pos.costBasis)}
+                                            <span className="text-gray-500 ml-1">
+                                                ({portfolio.totalInvested ? ((pos.costBasis / portfolio.totalInvested) * 100).toFixed(1) : 0}%)
+                                            </span>
+                                        </span>
+                                    </div>
+                                ))}
                             </div>
                         </div>
 
                         <div className="bg-white/5 border border-white/10 rounded-3xl p-6 backdrop-blur-sm flex flex-col justify-between relative overflow-hidden group">
-                            <h3 className="text-sm font-medium text-gray-400 mb-2">Ganancia/Pérdida Neta</h3>
-                            <div className="flex items-baseline gap-2">
-                                <span className={`text-4xl font-light tracking-tight ${(portfolio?.totalUnrealizedPl || 0) >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                                    {formatCurrency(portfolio?.totalUnrealizedPl || 0)}
-                                </span>
+                            <div>
+                                <h3 className="text-sm font-medium text-gray-400 mb-2">Ganancia/Pérdida Neta</h3>
+                                <div className="flex items-baseline gap-2">
+                                    <span className={`text-4xl font-light tracking-tight ${(portfolio?.totalUnrealizedPl || 0) >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                                        {formatCurrency(portfolio?.totalUnrealizedPl || 0)}
+                                    </span>
+                                </div>
+                                <div className="mt-2 text-sm font-medium text-gray-400 flex items-center gap-1">
+                                    {(portfolio?.totalUnrealizedPl || 0) >= 0 ? <TrendingUp size={14} className="text-emerald-400" /> : <TrendingDown size={14} className="text-red-400" />}
+                                    <span className={(portfolio?.totalUnrealizedPl || 0) >= 0 ? 'text-emerald-400' : 'text-red-400'}>
+                                        {portfolio?.totalInvested ? formatPct(((portfolio.totalUnrealizedPl) / portfolio.totalInvested) * 100) : '0.00%'}
+                                    </span>
+                                </div>
                             </div>
-                            <div className="mt-2 text-sm font-medium text-gray-400 flex items-center gap-1">
-                                {(portfolio?.totalUnrealizedPl || 0) >= 0 ? <TrendingUp size={14} className="text-emerald-400" /> : <TrendingDown size={14} className="text-red-400" />}
-                                <span className={(portfolio?.totalUnrealizedPl || 0) >= 0 ? 'text-emerald-400' : 'text-red-400'}>
-                                    {portfolio?.totalInvested ? formatPct(((portfolio.totalUnrealizedPl) / portfolio.totalInvested) * 100) : '0.00%'}
-                                </span>
+                            <div className="mt-4 flex flex-col gap-1.5 border-t border-white/5 pt-3">
+                                {portfolio?.positions.map(pos => (
+                                    <div key={pos.instrumentId} className="flex justify-between items-center text-xs">
+                                        <span className="text-gray-400">{pos.symbol}</span>
+                                        <span className={`flex items-center gap-1 ${pos.unrealizedPl >= 0 ? 'text-emerald-400/90' : 'text-red-400/90'}`}>
+                                            <span>{pos.unrealizedPl > 0 ? '+' : ''}{formatCurrency(pos.unrealizedPl)}</span>
+                                            <span className={`px-1.5 py-0.5 rounded-md bg-black/20 ${pos.unrealizedPl >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                                                {formatPct(pos.unrealizedPlPct)}
+                                            </span>
+                                        </span>
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     </div>

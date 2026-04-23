@@ -29,6 +29,21 @@ export const getPortfolio = async (token: string): Promise<PortfolioSummary> => 
     return res.json();
 };
 
+export interface InvestmentHistoryPoint {
+  date: string;
+  invested: number;
+  marketValue: number;
+  monthLabel: string;
+}
+
+export const getInvestmentHistory = async (token: string): Promise<InvestmentHistoryPoint[]> => {
+    const res = await fetch(`${API_URL}/investments/history`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!res.ok) throw new Error('Error al cargar el historial de inversiones');
+    return res.json();
+};
+
 export const getAiInsights = async (token: string) => {
     const res = await fetch(`${API_URL}/investments/ai-insights`, {
         headers: { Authorization: `Bearer ${token}` }

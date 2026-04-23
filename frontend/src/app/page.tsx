@@ -23,6 +23,7 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { formatCurrency } from "@/lib/utils";
 import GoalSpeedometer from "@/components/GoalSpeedometer";
+import { InvestmentHistoryChart } from "@/components/investments/InvestmentHistoryChart";
 import BreakdownWidget from "@/components/BreakdownWidget";
 import TrendWidget from "@/components/TrendWidget";
 import AccountsWidget from "@/components/AccountsWidget";
@@ -121,6 +122,13 @@ export default function Dashboard() {
           headers: { Authorization: `Bearer ${token}` }
         })
       ]);
+
+      if (summaryRes.status === 401 || transactionsRes.status === 401) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        router.push("/auth");
+        return;
+      }
 
       if (!summaryRes.ok || !transactionsRes.ok) {
         throw new Error("Error fetching dashboard data");
@@ -335,6 +343,9 @@ export default function Dashboard() {
                   </div>
                 </div>
               )}
+
+              {/* Investment History Chart */}
+              <InvestmentHistoryChart token={typeof window !== 'undefined' ? localStorage.getItem("token") || '' : ''} />
 
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
                 {/* Main Chart Area */}

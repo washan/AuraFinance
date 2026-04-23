@@ -24,6 +24,13 @@ export class InvestmentsController {
     return this.investmentsService.createTransaction(req.user.householdId, req.user.userId, dto);
   }
 
+  @Get('history')
+  @ApiOperation({ summary: 'Get portfolio historical values for charting' })
+  getHistory(@Req() req: any) {
+    return this.investmentsService.getHistory(req.user.householdId);
+  }
+
+
   @Get('ai-insights')
   @ApiOperation({ summary: 'Get AI analysis of the portfolio' })
   getAiInsights(@Req() req: any) {

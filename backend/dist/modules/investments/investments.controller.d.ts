@@ -36,6 +36,12 @@ export declare class InvestmentsController {
         price: import("@prisma/client/runtime/library").Decimal;
         commission: import("@prisma/client/runtime/library").Decimal;
     }>;
+    getHistory(req: any): Promise<{
+        date: Date;
+        invested: number;
+        marketValue: number;
+        monthLabel: string;
+    }[]>;
     getAiInsights(req: any): Promise<{
         analysis: string | undefined;
     }>;

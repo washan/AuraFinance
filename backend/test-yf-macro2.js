@@ -1,0 +1,27 @@
+async function test() {
+  try {
+    const symbol = 'SPY'; // SPDR S&P 500 ETF Trust, usually has very good macro news
+    const res = await fetch(`https://query2.finance.yahoo.com/v1/finance/search?q=${symbol}&newsCount=5`, {
+        headers: { 'User-Agent': 'Mozilla/5.0' }
+    });
+    const data = await res.json();
+    console.log(`\n--- News for ${symbol} ---`);
+    if (data.news && data.news.length > 0) {
+        data.news.forEach(n => console.log(`- ${n.title}`));
+    }
+    
+    const generalRes = await fetch(`https://query2.finance.yahoo.com/v1/finance/search?q=economy&newsCount=5`, {
+        headers: { 'User-Agent': 'Mozilla/5.0' }
+    });
+    const generalData = await generalRes.json();
+    console.log(`\n--- News for Economy ---`);
+    if (generalData.news && generalData.news.length > 0) {
+        generalData.news.forEach(n => console.log(`- ${n.title}`));
+    }
+
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+test();

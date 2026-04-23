@@ -30,6 +30,9 @@ let InvestmentsController = class InvestmentsController {
     createTransaction(req, dto) {
         return this.investmentsService.createTransaction(req.user.householdId, req.user.userId, dto);
     }
+    getHistory(req) {
+        return this.investmentsService.getHistory(req.user.householdId);
+    }
     getAiInsights(req) {
         return this.investmentsService.getAiInsights(req.user.householdId, req.user.userId);
     }
@@ -61,6 +64,14 @@ __decorate([
     __metadata("design:paramtypes", [Object, create_investment_dto_1.CreateInvestmentTransactionDto]),
     __metadata("design:returntype", void 0)
 ], InvestmentsController.prototype, "createTransaction", null);
+__decorate([
+    (0, common_1.Get)('history'),
+    (0, swagger_1.ApiOperation)({ summary: 'Get portfolio historical values for charting' }),
+    __param(0, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], InvestmentsController.prototype, "getHistory", null);
 __decorate([
     (0, common_1.Get)('ai-insights'),
     (0, swagger_1.ApiOperation)({ summary: 'Get AI analysis of the portfolio' }),

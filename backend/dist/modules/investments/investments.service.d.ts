@@ -38,6 +38,12 @@ export declare class InvestmentsService {
     getAiInsights(householdId: string, userId: string): Promise<{
         analysis: string | undefined;
     }>;
+    getHistory(householdId: string): Promise<{
+        date: Date;
+        invested: number;
+        marketValue: number;
+        monthLabel: string;
+    }[]>;
     getTransactions(householdId: string): Promise<({
         account: {
             name: string;

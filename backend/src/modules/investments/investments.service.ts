@@ -156,15 +156,57 @@ export class InvestmentsService {
       const ai = new GoogleGenAI({ apiKey: param.value });
       const portfolio = await this.getPortfolio(householdId);
 
+      let newsContext = '';
+      try {
+        const uniqueSymbols = Array.from(new Set(portfolio.positions.map((p: any) => p.symbol)));
+        
+        // Fetch specific news for the assets
+        const specificNewsPromises = uniqueSymbols.slice(0, 3).map(async (symbol) => {
+          const res = await fetch(`https://query2.finance.yahoo.com/v1/finance/search?q=${symbol}&newsCount=3`, {
+            headers: { 'User-Agent': 'Mozilla/5.0' }
+          });
+          const data = await res.json();
+          const news = data?.news || [];
+          if (news.length > 0) {
+            return `Noticias para ${symbol}:\n` + news.map((n: any) => `- ${n.title}`).join('\n');
+          }
+          return '';
+        });
+
+        // Always fetch general macro news (using SPY as generic S&P 500 / US Market proxy)
+        const macroNewsPromise = fetch(`https://query2.finance.yahoo.com/v1/finance/search?q=SPY&newsCount=5`, {
+          headers: { 'User-Agent': 'Mozilla/5.0' }
+        }).then(res => res.json()).then(data => {
+            const news = data?.news || [];
+            if (news.length > 0) {
+               return `Noticias Generales del Mercado y S&P 500:\n` + news.map((n: any) => `- ${n.title}`).join('\n');
+            }
+            return '';
+        });
+
+        const allPromises = [...specificNewsPromises, macroNewsPromise];
+        const newsResults = await Promise.all(allPromises);
+        const validNews = newsResults.filter((n: string) => n.length > 0);
+        
+        if (validNews.length > 0) {
+          newsContext = `\n--- CONTEXTO DE MERCADO EN TIEMPO REAL ---\n${validNews.join('\n\n')}\n------------------------------------------\n`;
+        }
+      } catch (error) {
+        console.error('Failed to fetch news context', error);
+      }
+
       const prompt = `
 You are a financial advisor. Here is my current investment portfolio details:
 Total Market Value: $${portfolio.totalMarketValue}
 Total Invested: $${portfolio.totalInvested}
 Unrealized P&L: $${portfolio.totalUnrealizedPl}
 Positions: ${JSON.stringify(portfolio.positions, null, 2)}
+${newsContext}
 
-Provide a very brief (2-3 paragraphs max) analysis of this portfolio. Mention any concentration risks, performance highlights, and a piece of general advice.
-Write the response natively in Spanish. Format in markdown avoiding complex layout. Focus on the actual numbers shown in the prompt.
+Provide a brief (2-3 paragraphs max) analysis of this portfolio. Mention any concentration risks, performance highlights, and a piece of general advice. 
+IMPORTANT: Use the provided "CONTEXTO DE MERCADO EN TIEMPO REAL" to explain potential reasons for current market movements or the portfolio's performance. Often, specific ticker news might be irrelevant or noisy; if so, rely entirely on the "Noticias Generales del Mercado y S&P 500" to explain macroeconomic trends (e.g., interest rates, geopolitical events running the market broadly). Connect the macro news to the portfolio's performance.
+
+Write the response natively in Spanish. Format in markdown avoiding complex layout. Focus on the actual numbers shown in the prompt and the provided news context.
       `;
 
       const response = await ai.models.generateContent({
@@ -178,6 +220,96 @@ Write the response natively in Spanish. Format in markdown avoiding complex layo
       throw new BadRequestException('Error detallado: ' + (error.message || error.toString()));
     }
   }
+  async getHistory(householdId: string) {
+    const instruments = await this.prisma.instrument.findMany({
+      where: { householdId },
+      include: {
+        transactions: { orderBy: { date: 'asc' } },
+      },
+    });
+
+    const history = [];
+    const now = new Date();
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i + 1, 0); // last day of month
+      history.push({ 
+        date: d, 
+        invested: 0, 
+        marketValue: 0, 
+        monthLabel: d.toLocaleDateString('es-ES', { month: 'short', year: '2-digit' }) 
+      });
+    }
+
+    for (const inst of instruments) {
+      if (inst.transactions.length === 0) continue;
+
+      let historicalQuotes: any[] = [];
+      try {
+        const res = await fetch(`https://query2.finance.yahoo.com/v8/finance/chart/${inst.symbol}?interval=1mo&range=1y`, {
+          headers: { 'User-Agent': 'Mozilla/5.0' }
+        });
+        const data = await res.json();
+        
+        const timestamps = data?.chart?.result?.[0]?.timestamp || [];
+        const closes = data?.chart?.result?.[0]?.indicators?.quote?.[0]?.close || [];
+        
+        historicalQuotes = timestamps.map((ts: number, i: number) => ({
+           date: new Date(ts * 1000),
+           close: closes[i]
+        })).filter((q: any) => q.close !== null && q.close !== undefined);
+      } catch (error: any) {
+        console.error(`Failed to fetch history for ${inst.symbol}`, error.message);
+      }
+
+      for (let h of history) {
+        let position = 0;
+        let costBasis = 0;
+
+        for (const t of inst.transactions) {
+          if (t.date <= h.date) {
+            const qty = Number(t.quantity);
+            const price = Number(t.price);
+            const comm = Number(t.commission);
+
+            if (t.type === 'BUY') {
+              position += qty;
+              costBasis += (qty * price) + comm;
+            } else if (t.type === 'SELL') {
+              if (position > 0) {
+                const avgCost = costBasis / position;
+                position -= qty;
+                costBasis -= avgCost * qty;
+              }
+            }
+          }
+        }
+
+        if (position > 0) {
+          h.invested += costBasis;
+          
+          let price = 0;
+          const quote = historicalQuotes.find(q => 
+            q.date.getMonth() === h.date.getMonth() && 
+            q.date.getFullYear() === h.date.getFullYear()
+          );
+          
+          if (quote) {
+            price = quote.close;
+          } else if (historicalQuotes.length > 0) {
+            const lastQuote = historicalQuotes[historicalQuotes.length - 1];
+            price = lastQuote.close;
+          } else {
+            price = costBasis / position; 
+          }
+
+          h.marketValue += position * price;
+        }
+      }
+    }
+
+    return history;
+  }
+
   async getTransactions(householdId: string) {
     return this.prisma.investmentTransaction.findMany({
       where: {
