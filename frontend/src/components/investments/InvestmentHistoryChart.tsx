@@ -80,7 +80,7 @@ export const InvestmentHistoryChart: React.FC<Props> = ({ token }) => {
                 tick={{ fill: '#6B7280', fontSize: 12 }}
             />
             <Tooltip
-              formatter={(value: number) => [`$${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, '']}
+              formatter={(value: any, name: any) => [`$${Number(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, name]}
               labelStyle={{ color: '#111827', fontWeight: 'bold' }}
               contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
             />
