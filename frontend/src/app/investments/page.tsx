@@ -300,7 +300,7 @@ export default function InvestmentsPage() {
                                             paddingAngle={5}
                                             dataKey="value"
                                             stroke="none"
-                                            label={({ percent }) => percent > 0 ? `${(percent * 100).toFixed(1)}%` : ''}
+                                            label={({ percent }: any) => (percent && percent > 0) ? `${(percent * 100).toFixed(1)}%` : ''}
                                         >
                                             {(portfolio?.positions || []).map((entry, index) => (
                                                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
