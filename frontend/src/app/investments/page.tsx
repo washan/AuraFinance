@@ -3,10 +3,13 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Sidebar } from "@/components/Sidebar";
-import { Bell, Plus, TrendingUp, TrendingDown, DollarSign, BrainCircuit, RefreshCw, History } from "lucide-react";
+import { Bell, Plus, TrendingUp, TrendingDown, DollarSign, BrainCircuit, RefreshCw, History, PieChart as PieChartIcon } from "lucide-react";
 import { getPortfolio, getAiInsights, PortfolioSummary } from "@/services/investmentService";
 import { AddInvestmentModal } from "@/components/investments/AddInvestmentModal";
 import { TransactionsHistoryModal } from "@/components/investments/TransactionsHistoryModal";
+import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, Legend, ResponsiveContainer } from 'recharts';
+
+const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#06b6d4', '#f43f5e', '#84cc16'];
 
 export default function InvestmentsPage() {
     const router = useRouter();
@@ -203,46 +206,6 @@ export default function InvestmentsPage() {
                         </div>
                     </div>
 
-                    {/* AI Advisor Section */}
-                    <div className="bg-gradient-to-br from-indigo-900/40 to-black border border-indigo-500/30 rounded-3xl p-6 md:p-8 relative overflow-hidden">
-                        <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
-                        <div className="flex items-start justify-between gap-4 mb-6 relative z-10">
-                            <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 rounded-xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center">
-                                    <BrainCircuit className="w-6 h-6 text-indigo-400" />
-                                </div>
-                                <div>
-                                    <h2 className="text-xl font-bold text-white">Asesor de Inteligencia Artificial</h2>
-                                    <p className="text-sm text-gray-400">Analiza tu portafolio en tiempo real con Gemini</p>
-                                </div>
-                            </div>
-                            <button
-                                onClick={handleGetInsights}
-                                disabled={loadingAi}
-                                className="bg-indigo-600/20 hover:bg-indigo-600/40 border border-indigo-500/50 text-indigo-300 px-4 py-2 rounded-xl text-sm font-medium transition-colors focus:ring-2 focus:ring-indigo-500 outline-none flex items-center gap-2"
-                            >
-                                {loadingAi ? <RefreshCw size={16} className="animate-spin" /> : <BrainCircuit size={16} />}
-                                {loadingAi ? 'Analizando...' : 'Generar Análisis'}
-                            </button>
-                        </div>
-                        
-                        {aiError && (
-                            <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm mb-4 relative z-10">
-                                {aiError}
-                            </div>
-                        )}
-                        
-                        {aiInsight && (
-                            <div className="prose prose-invert prose-indigo max-w-none text-gray-300 text-sm md:text-base leading-relaxed p-6 bg-black/40 border border-white/5 rounded-2xl relative z-10" dangerouslySetInnerHTML={{ __html: aiInsight.replace(/\n\n/g, '<br/><br/>') }}>
-                            </div>
-                        )}
-                        {!aiInsight && !loadingAi && !aiError && (
-                            <div className="text-center py-6 text-gray-500 text-sm relative z-10">
-                                Haz clic en &quot;Generar Análisis&quot; para recibir consejos personalizados sobre tus inversiones actuales.
-                            </div>
-                        )}
-                    </div>
-
                     {/* Positions Table (Broker View) */}
                     <div>
                         <h2 className="text-xl font-bold text-white mb-4">Tus Participaciones</h2>
@@ -304,6 +267,112 @@ export default function InvestmentsPage() {
                                 ))
                             )}
                         </div>
+                    </div>
+
+                    {/* ETF Distribution Chart */}
+                    <div className="bg-white/5 border border-white/10 rounded-3xl p-6 md:p-8 relative overflow-hidden">
+                        <div className="flex items-center gap-3 mb-6 relative z-10">
+                            <div className="w-12 h-12 rounded-xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center">
+                                <PieChartIcon className="w-6 h-6 text-indigo-400" />
+                            </div>
+                            <div>
+                                <h2 className="text-xl font-bold text-white">Distribución del Portafolio</h2>
+                                <p className="text-sm text-gray-400">Porcentaje de participación por instrumento</p>
+                            </div>
+                        </div>
+                        <div className="h-[400px] w-full mt-4">
+                            {portfolio?.positions.length === 0 ? (
+                                <div className="w-full h-full flex items-center justify-center text-gray-500">
+                                    No hay datos para mostrar
+                                </div>
+                            ) : (
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <PieChart>
+                                        <Pie
+                                            data={portfolio?.positions.map(pos => ({
+                                                name: pos.symbol,
+                                                value: portfolio.totalMarketValue ? (pos.marketValue / portfolio.totalMarketValue) * 100 : 0
+                                            })) || []}
+                                            cx="50%"
+                                            cy="50%"
+                                            innerRadius={80}
+                                            outerRadius={130}
+                                            paddingAngle={5}
+                                            dataKey="value"
+                                            stroke="none"
+                                            label={({ percent }) => percent > 0 ? `${(percent * 100).toFixed(1)}%` : ''}
+                                        >
+                                            {(portfolio?.positions || []).map((entry, index) => (
+                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                            ))}
+                                        </Pie>
+                                        <RechartsTooltip 
+                                            content={({ active, payload }) => {
+                                                if (active && payload && payload.length) {
+                                                    return (
+                                                        <div className="bg-black/80 border border-white/10 p-3 rounded-lg backdrop-blur-md shadow-xl">
+                                                            <p className="text-white font-medium">{payload[0].name}</p>
+                                                            <p className="text-indigo-400">
+                                                                {Number(payload[0].value).toFixed(2)}%
+                                                            </p>
+                                                        </div>
+                                                    );
+                                                }
+                                                return null;
+                                            }}
+                                        />
+                                        <Legend 
+                                            verticalAlign="bottom" 
+                                            height={36} 
+                                            iconType="circle"
+                                            formatter={(value) => (
+                                                <span className="text-gray-300 text-sm ml-1">{value}</span>
+                                            )}
+                                        />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* AI Advisor Section */}
+                    <div className="bg-gradient-to-br from-indigo-900/40 to-black border border-indigo-500/30 rounded-3xl p-6 md:p-8 relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+                        <div className="flex items-start justify-between gap-4 mb-6 relative z-10">
+                            <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 rounded-xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center">
+                                    <BrainCircuit className="w-6 h-6 text-indigo-400" />
+                                </div>
+                                <div>
+                                    <h2 className="text-xl font-bold text-white">Asesor de Inteligencia Artificial</h2>
+                                    <p className="text-sm text-gray-400">Analiza tu portafolio en tiempo real con Gemini</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={handleGetInsights}
+                                disabled={loadingAi}
+                                className="bg-indigo-600/20 hover:bg-indigo-600/40 border border-indigo-500/50 text-indigo-300 px-4 py-2 rounded-xl text-sm font-medium transition-colors focus:ring-2 focus:ring-indigo-500 outline-none flex items-center gap-2"
+                            >
+                                {loadingAi ? <RefreshCw size={16} className="animate-spin" /> : <BrainCircuit size={16} />}
+                                {loadingAi ? 'Analizando...' : 'Generar Análisis'}
+                            </button>
+                        </div>
+                        
+                        {aiError && (
+                            <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm mb-4 relative z-10">
+                                {aiError}
+                            </div>
+                        )}
+                        
+                        {aiInsight && (
+                            <div className="prose prose-invert prose-indigo max-w-none text-gray-300 text-sm md:text-base leading-relaxed p-6 bg-black/40 border border-white/5 rounded-2xl relative z-10" dangerouslySetInnerHTML={{ __html: aiInsight.replace(/\n\n/g, '<br/><br/>') }}>
+                            </div>
+                        )}
+                        {!aiInsight && !loadingAi && !aiError && (
+                            <div className="text-center py-6 text-gray-500 text-sm relative z-10">
+                                Haz clic en &quot;Generar Análisis&quot; para recibir consejos personalizados sobre tus inversiones actuales.
+                            </div>
+                        )}
                     </div>
 
                 </div>

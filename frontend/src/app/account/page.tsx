@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Bell, Search, Plus, Trash2, Edit2, Check, X, Users, Zap, Mail, DownloadCloud, UploadCloud, Database } from "lucide-react";
+import { Bell, Search, Plus, Trash2, Edit2, Check, X, Users, Zap, Mail, DownloadCloud, UploadCloud, Database, Settings2 } from "lucide-react";
 import { Sidebar } from "@/components/Sidebar";
 import { Toast, ToastType } from "@/components/ui/toast";
 import { format } from "date-fns";
@@ -22,6 +22,7 @@ export default function AccountPage() {
     const [connections, setConnections] = useState<any[]>([]);
     const [geminiApiKey, setGeminiApiKey] = useState("");
     const [hasGeminiKey, setHasGeminiKey] = useState(false);
+    const [exchangeRate, setExchangeRate] = useState("");
 
     useEffect(() => {
         const token = localStorage.getItem("token");
@@ -38,10 +39,11 @@ export default function AccountPage() {
     const fetchData = async (token: string) => {
         try {
             const hdrs = { Authorization: `Bearer ${token}` };
-            const [membersRes, connRes, geminiRes] = await Promise.all([
+            const [membersRes, connRes, geminiRes, exchangeRateRes] = await Promise.all([
                 fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/household/members`, { headers: hdrs }),
                 fetch(`${process.env.NEXT_PUBLIC_API_URL}/inbox/connections`, { headers: hdrs }),
                 fetch(`${process.env.NEXT_PUBLIC_API_URL}/parameters/GEMINI_API_KEY`, { headers: hdrs }),
+                fetch(`${process.env.NEXT_PUBLIC_API_URL}/parameters/LAST_EXCHANGE_RATE`, { headers: hdrs }),
             ]);
             
             if (membersRes.ok) setMembers(await membersRes.json());
@@ -51,6 +53,12 @@ export default function AccountPage() {
                 if (data && data.value) {
                     setHasGeminiKey(true);
                     setGeminiApiKey(data.value);
+                }
+            }
+            if (exchangeRateRes.ok) {
+                const data = await exchangeRateRes.json();
+                if (data && data.value) {
+                    setExchangeRate(data.value);
                 }
             }
             
@@ -186,6 +194,22 @@ export default function AccountPage() {
         }
     };
 
+    const handleSaveExchangeRate = async (e: React.FormEvent) => {
+        e.preventDefault();
+        const token = localStorage.getItem("token");
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/parameters/LAST_EXCHANGE_RATE`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ value: exchangeRate, description: "Tipo de cambio manual para transacciones" })
+        });
+        if (res.ok) {
+            setToast({ message: "Tipo de cambio guardado exitosamente.", type: "success" });
+            fetchData(token!);
+        } else {
+            setToast({ message: "Error al guardar el tipo de cambio.", type: "error" });
+        }
+    };
+
     const handleDeleteConnection = async (id: string) => {
         if (!window.confirm("¿Estás seguro de eliminar esta integración de correo? Se borrarán las transacciones del buzón asociadas pero no las transacciones confirmadas.")) return;
         const token = localStorage.getItem("token");
@@ -267,6 +291,12 @@ export default function AccountPage() {
                             onClick={() => setActiveTab("backup")}
                         >
                             <Database size={18} /> Respaldo de Datos
+                        </button>
+                        <button
+                            className={`px-4 py-2 font-medium rounded-lg transition-colors whitespace-nowrap flex items-center gap-2 ${activeTab === "parameters" ? "bg-indigo-500/20 text-indigo-300" : "text-gray-400 hover:text-white hover:bg-white/5"}`}
+                            onClick={() => setActiveTab("parameters")}
+                        >
+                            <Settings2 size={18} /> Parámetros
                         </button>
                     </div>
 
@@ -409,6 +439,36 @@ export default function AccountPage() {
                                             <div className="flex flex-col justify-end">
                                                 <button type="submit" className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 h-[38px] shadow-[0_0_10px_rgba(99,102,241,0.2)]">
                                                     <Check size={16} /> Guardar Clave
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Parameters Tab */}
+                        {activeTab === "parameters" && (
+                            <div className="space-y-6">
+                                <div className="border-b border-white/10 pb-4">
+                                    <h3 className="text-lg font-medium">Parámetros del Sistema</h3>
+                                    <p className="text-sm text-gray-400 mt-1">Ajusta los parámetros y configuraciones globales para facilitar el registro de datos.</p>
+                                </div>
+
+                                <div className="bg-indigo-900/10 p-4 rounded-xl border border-white/5">
+                                    <h4 className="text-md font-medium mb-4 text-indigo-300">Tipo de Cambio por Defecto</h4>
+                                    <form onSubmit={handleSaveExchangeRate} className="flex flex-col gap-4">
+                                        <div className="bg-black/50 p-4 rounded-lg border border-indigo-500/20 text-sm text-gray-300 space-y-2">
+                                            <p>Este es el tipo de cambio (USD a CRC) que se sugerirá automáticamente al registrar transacciones.</p>
+                                        </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                            <div className="md:col-span-3">
+                                                <label className="block text-xs text-gray-400 mb-1">LAST_EXCHANGE_RATE</label>
+                                                <input type="number" step="0.01" value={exchangeRate} onChange={e => setExchangeRate(e.target.value)} required className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Ej. 510.50" />
+                                            </div>
+                                            <div className="flex flex-col justify-end">
+                                                <button type="submit" className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 h-[38px] shadow-[0_0_10px_rgba(99,102,241,0.2)]">
+                                                    <Check size={16} /> Guardar
                                                 </button>
                                             </div>
                                         </div>
