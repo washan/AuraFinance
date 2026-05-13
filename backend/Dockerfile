@@ -22,7 +22,7 @@ RUN apt-get update && apt-get install -y \
 # Configura variables de entorno para que Puppeteer use el Chromium que acabamos de instalar
 ENV CHROME_BIN=/usr/bin/chromium
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
-ENV NODE_OPTIONS="--max-old-space-size=256"
+
 
 # Directorio de trabajo en el contenedor
 WORKDIR /app
@@ -42,6 +42,9 @@ COPY . .
 
 # Compila el proyecto NestJS
 RUN npm run build
+
+# Limita la memoria de Node en tiempo de ejecución (no en tiempo de compilación)
+ENV NODE_OPTIONS="--max-old-space-size=256"
 
 # Expone el puerto (Render por defecto escucha en variables PORT, pero internamente puedes usar el que quieras)
 EXPOSE 3001
