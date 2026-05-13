@@ -1,0 +1,8 @@
+node_modules
+dist
+.env
+.wwebjs_auth
+.wwebjs_cache
+test-*.ts
+test-*.js
+test-*.mjs
