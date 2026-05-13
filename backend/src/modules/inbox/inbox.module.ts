@@ -8,9 +8,10 @@ import { PrismaModule } from '../../prisma/prisma.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { InboxRulesModule } from '../inbox-rules/inbox-rules.module';
 import { RecurringEventsModule } from '../recurring-events/recurring-events.module';
+import { WhatsAppModule } from '../whatsapp/whatsapp.module';
 
 @Module({
-    imports: [PrismaModule, ScheduleModule.forRoot(), InboxRulesModule, RecurringEventsModule],
+    imports: [PrismaModule, ScheduleModule.forRoot(), InboxRulesModule, RecurringEventsModule, WhatsAppModule],
     controllers: [InboxController],
     providers: [InboxService, ImapService, ParserService, InboxCronService],
     exports: [InboxService],

@@ -1,10 +1,12 @@
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateRecurringEventDto } from './dto/create-recurring-event.dto';
 import { UpdateRecurringEventDto } from './dto/update-recurring-event.dto';
+import { WhatsAppService } from '../whatsapp/whatsapp.service';
 export declare class RecurringEventsService {
     private prisma;
+    private whatsappService;
     private readonly logger;
-    constructor(prisma: PrismaService);
+    constructor(prisma: PrismaService, whatsappService: WhatsAppService);
     create(householdId: string, dto: CreateRecurringEventDto): Promise<{
         currency: string;
         name: string;

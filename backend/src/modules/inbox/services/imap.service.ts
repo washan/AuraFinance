@@ -4,6 +4,7 @@ import { BankConnection } from '@prisma/client';
 import * as imaps from 'imap-simple';
 import { simpleParser } from 'mailparser';
 import { ParserService } from './parser.service';
+import { WhatsAppService } from '../../whatsapp/whatsapp.service';
 
 @Injectable()
 export class ImapService {
@@ -12,6 +13,7 @@ export class ImapService {
     constructor(
         private prisma: PrismaService,
         private parserService: ParserService,
+        private whatsappService: WhatsAppService,
     ) { }
 
     async syncAllActiveConnections() {
@@ -108,6 +110,13 @@ export class ImapService {
                             }
                         });
                         this.logger.log(`Created new pending transaction for merchant: ${parsedData.merchant}`);
+                        
+                        // Notify via WhatsApp
+                        const amountFormatted = new Intl.NumberFormat('es-CR', { style: 'currency', currency: parsedData.currency }).format(Number(parsedData.amount));
+                        const message = `🤖 *Aura Buzón*\nNuevo gasto detectado:\n🏪 Comercio: ${parsedData.merchant}\n💰 Monto: ${amountFormatted}\n\nRequiere tu clasificación en la app.`;
+                        this.whatsappService.sendMessageToConfiguredNumbers(connection.userId, message).catch(err => {
+                            this.logger.error('Failed to notify via WhatsApp from IMAP', err);
+                        });
                     }
                 } else {
                     this.logger.warn(`Could not extract transaction data from email ID ${id}`);

@@ -374,8 +374,12 @@ export default function Dashboard() {
 
                     {/* Bars Calculation (Finding Max for scaling) */}
                     {(() => {
-                      const maxVal = Math.max(...metrics.cashFlow.flatMap((d: any) => [d.inc, d.exp]), 1); // Avoid div by 0
-                      return metrics.cashFlow.map((data: any, i: number) => (
+                      const cashFlow = metrics.cashFlow || [];
+                      if (cashFlow.length === 0) {
+                        return <div className="w-full flex justify-center items-center h-full text-gray-500 text-sm">No hay datos de flujo de caja</div>;
+                      }
+                      const maxVal = Math.max(...cashFlow.flatMap((d: any) => [d.inc, d.exp]), 1); // Avoid div by 0
+                      return cashFlow.map((data: any, i: number) => (
                         <div key={i} className="flex flex-col items-center flex-1 group/bar cursor-pointer">
                           <div className="w-full max-w-[40px] flex gap-1 items-end h-[200px] relative">
                             {/* Tooltip */}

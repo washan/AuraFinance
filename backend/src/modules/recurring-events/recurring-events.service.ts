@@ -2,12 +2,16 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateRecurringEventDto } from './dto/create-recurring-event.dto';
 import { UpdateRecurringEventDto } from './dto/update-recurring-event.dto';
+import { WhatsAppService } from '../whatsapp/whatsapp.service';
 
 @Injectable()
 export class RecurringEventsService {
     private readonly logger = new Logger(RecurringEventsService.name);
 
-    constructor(private prisma: PrismaService) { }
+    constructor(
+        private prisma: PrismaService,
+        private whatsappService: WhatsAppService,
+    ) { }
 
     async create(householdId: string, dto: CreateRecurringEventDto) {
         return this.prisma.recurringEvent.create({
@@ -93,6 +97,16 @@ export class RecurringEventsService {
                 where: { id: event.id },
                 data: { lastGeneratedAt: today },
             });
+
+            // Notify via WhatsApp
+            const firstUser = await this.prisma.user.findFirst({ where: { householdId: event.householdId } });
+            if (firstUser) {
+                const amountFormatted = new Intl.NumberFormat('es-CR', { style: 'currency', currency: event.currency }).format(Number(event.amount));
+                const message = `🤖 *Aura Buzón*\nNuevo gasto recurrente automático:\n🏪 Comercio: ${event.merchant}\n💰 Monto: ${amountFormatted}\n\nRequiere tu clasificación en la app.`;
+                this.whatsappService.sendMessageToConfiguredNumbers(firstUser.id, message).catch(err => {
+                    this.logger.error('Failed to notify via WhatsApp from RecurringEvents', err);
+                });
+            }
 
             generated++;
             this.logger.log(`Generated inbox tx for recurring event: ${event.name}`);

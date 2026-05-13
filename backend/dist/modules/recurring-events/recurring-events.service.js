@@ -13,11 +13,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.RecurringEventsService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../../prisma/prisma.service");
+const whatsapp_service_1 = require("../whatsapp/whatsapp.service");
 let RecurringEventsService = RecurringEventsService_1 = class RecurringEventsService {
     prisma;
+    whatsappService;
     logger = new common_1.Logger(RecurringEventsService_1.name);
-    constructor(prisma) {
+    constructor(prisma, whatsappService) {
         this.prisma = prisma;
+        this.whatsappService = whatsappService;
     }
     async create(householdId, dto) {
         return this.prisma.recurringEvent.create({
@@ -87,6 +90,14 @@ let RecurringEventsService = RecurringEventsService_1 = class RecurringEventsSer
                 where: { id: event.id },
                 data: { lastGeneratedAt: today },
             });
+            const firstUser = await this.prisma.user.findFirst({ where: { householdId: event.householdId } });
+            if (firstUser) {
+                const amountFormatted = new Intl.NumberFormat('es-CR', { style: 'currency', currency: event.currency }).format(Number(event.amount));
+                const message = `🤖 *Aura Buzón*\nNuevo gasto recurrente automático:\n🏪 Comercio: ${event.merchant}\n💰 Monto: ${amountFormatted}\n\nRequiere tu clasificación en la app.`;
+                this.whatsappService.sendMessageToConfiguredNumbers(firstUser.id, message).catch(err => {
+                    this.logger.error('Failed to notify via WhatsApp from RecurringEvents', err);
+                });
+            }
             generated++;
             this.logger.log(`Generated inbox tx for recurring event: ${event.name}`);
         }
@@ -121,6 +132,7 @@ let RecurringEventsService = RecurringEventsService_1 = class RecurringEventsSer
 exports.RecurringEventsService = RecurringEventsService;
 exports.RecurringEventsService = RecurringEventsService = RecurringEventsService_1 = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
+        whatsapp_service_1.WhatsAppService])
 ], RecurringEventsService);
 //# sourceMappingURL=recurring-events.service.js.map

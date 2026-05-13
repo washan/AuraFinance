@@ -11,12 +11,13 @@ const common_1 = require("@nestjs/common");
 const recurring_events_controller_1 = require("./recurring-events.controller");
 const recurring_events_service_1 = require("./recurring-events.service");
 const prisma_module_1 = require("../../prisma/prisma.module");
+const whatsapp_module_1 = require("../whatsapp/whatsapp.module");
 let RecurringEventsModule = class RecurringEventsModule {
 };
 exports.RecurringEventsModule = RecurringEventsModule;
 exports.RecurringEventsModule = RecurringEventsModule = __decorate([
     (0, common_1.Module)({
-        imports: [prisma_module_1.PrismaModule],
+        imports: [prisma_module_1.PrismaModule, whatsapp_module_1.WhatsAppModule],
         controllers: [recurring_events_controller_1.RecurringEventsController],
         providers: [recurring_events_service_1.RecurringEventsService],
         exports: [recurring_events_service_1.RecurringEventsService],

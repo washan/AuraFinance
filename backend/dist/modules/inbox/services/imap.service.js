@@ -49,13 +49,16 @@ const prisma_service_1 = require("../../../prisma/prisma.service");
 const imaps = __importStar(require("imap-simple"));
 const mailparser_1 = require("mailparser");
 const parser_service_1 = require("./parser.service");
+const whatsapp_service_1 = require("../../whatsapp/whatsapp.service");
 let ImapService = ImapService_1 = class ImapService {
     prisma;
     parserService;
+    whatsappService;
     logger = new common_1.Logger(ImapService_1.name);
-    constructor(prisma, parserService) {
+    constructor(prisma, parserService, whatsappService) {
         this.prisma = prisma;
         this.parserService = parserService;
+        this.whatsappService = whatsappService;
     }
     async syncAllActiveConnections() {
         this.logger.log('Starting global IMAP sync for active connections...');
@@ -138,6 +141,11 @@ let ImapService = ImapService_1 = class ImapService {
                             }
                         });
                         this.logger.log(`Created new pending transaction for merchant: ${parsedData.merchant}`);
+                        const amountFormatted = new Intl.NumberFormat('es-CR', { style: 'currency', currency: parsedData.currency }).format(Number(parsedData.amount));
+                        const message = `🤖 *Aura Buzón*\nNuevo gasto detectado:\n🏪 Comercio: ${parsedData.merchant}\n💰 Monto: ${amountFormatted}\n\nRequiere tu clasificación en la app.`;
+                        this.whatsappService.sendMessageToConfiguredNumbers(connection.userId, message).catch(err => {
+                            this.logger.error('Failed to notify via WhatsApp from IMAP', err);
+                        });
                     }
                 }
                 else {
@@ -164,6 +172,7 @@ exports.ImapService = ImapService;
 exports.ImapService = ImapService = ImapService_1 = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
-        parser_service_1.ParserService])
+        parser_service_1.ParserService,
+        whatsapp_service_1.WhatsAppService])
 ], ImapService);
 //# sourceMappingURL=imap.service.js.map

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Bell, Search, Plus, Trash2, Edit2, Check, X, Zap, RefreshCw } from "lucide-react";
+import { Bell, Search, Plus, Trash2, Edit2, Check, X, Zap, RefreshCw, MessageCircle } from "lucide-react";
 import { Sidebar } from "@/components/Sidebar";
 import { Toast, ToastType } from "@/components/ui/toast";
 import { formatCurrency } from "@/lib/utils";
@@ -58,6 +58,11 @@ export default function SettingsPage() {
     const [editingRecurring, setEditingRecurring] = useState<any | null>(null);
     const [newRecurringFreq, setNewRecurringFreq] = useState("monthly");
 
+    // WhatsApp states
+    const [whatsappStatus, setWhatsappStatus] = useState<any>(null);
+    const [whatsappNumbers, setWhatsappNumbers] = useState("");
+
+
 
     useEffect(() => {
         const token = localStorage.getItem("token");
@@ -74,14 +79,16 @@ export default function SettingsPage() {
     const fetchCatalogs = async (token: string) => {
         try {
             const hdrs = { Authorization: `Bearer ${token}` };
-            const [curRes, catRes, accRes, projRes, goalsRes, rulesRes, recRes] = await Promise.all([
+            const [curRes, catRes, accRes, projRes, goalsRes, rulesRes, recRes, waRes, paramRes] = await Promise.all([
                 fetch(`${process.env.NEXT_PUBLIC_API_URL}/currencies`, { headers: hdrs }),
                 fetch(`${process.env.NEXT_PUBLIC_API_URL}/categories`, { headers: hdrs }),
                 fetch(`${process.env.NEXT_PUBLIC_API_URL}/accounts`, { headers: hdrs }),
                 fetch(`${process.env.NEXT_PUBLIC_API_URL}/projects`, { headers: hdrs }),
                 fetch(`${process.env.NEXT_PUBLIC_API_URL}/goals`, { headers: hdrs }),
                 fetch(`${process.env.NEXT_PUBLIC_API_URL}/inbox-rules`, { headers: hdrs }),
-                fetch(`${process.env.NEXT_PUBLIC_API_URL}/recurring-events`, { headers: hdrs })
+                fetch(`${process.env.NEXT_PUBLIC_API_URL}/recurring-events`, { headers: hdrs }),
+                fetch(`${process.env.NEXT_PUBLIC_API_URL}/whatsapp/status`, { headers: hdrs }),
+                fetch(`${process.env.NEXT_PUBLIC_API_URL}/parameters/WHATSAPP_NOTIFY_NUMBERS`, { headers: hdrs })
             ]);
             if (curRes.ok) setCurrencies(await curRes.json());
             if (catRes.ok) setCategories(await catRes.json());
@@ -90,12 +97,33 @@ export default function SettingsPage() {
             if (goalsRes.ok) setGoals(await goalsRes.json());
             if (rulesRes.ok) setRules(await rulesRes.json());
             if (recRes.ok) setRecurringEvents(await recRes.json());
+            if (waRes.ok) setWhatsappStatus(await waRes.json());
+            if (paramRes.ok) {
+                const p = await paramRes.json();
+                if (p && p.value) setWhatsappNumbers(p.value);
+            }
             setIsLoading(false);
         } catch (e) {
             console.error(e);
             setIsLoading(false);
         }
     };
+
+    const handleSaveWhatsappNumbers = async (e: React.FormEvent) => {
+        e.preventDefault();
+        const token = localStorage.getItem("token");
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/parameters/WHATSAPP_NOTIFY_NUMBERS`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ value: whatsappNumbers, description: "Números para notificaciones de WhatsApp" })
+        });
+        if (res.ok) {
+            setToast({ message: "Números de WhatsApp guardados exitosamente.", type: "success" });
+        } else {
+            setToast({ message: "Error al guardar números de WhatsApp.", type: "error" });
+        }
+    };
+
 
     const handleCreateCurrency = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -630,6 +658,12 @@ export default function SettingsPage() {
                             onClick={() => setActiveTab("recurring")}
                         >
                             <RefreshCw size={14} /> Recurrentes
+                        </button>
+                        <button
+                            className={`shrink-0 px-3 py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-1.5 ${activeTab === "whatsapp" ? "bg-green-500/20 text-green-400" : "text-gray-400 hover:text-white hover:bg-white/5"}`}
+                            onClick={() => setActiveTab("whatsapp")}
+                        >
+                            <MessageCircle size={14} /> WhatsApp
                         </button>
                     </div>
 
@@ -1686,6 +1720,70 @@ export default function SettingsPage() {
                                             </button>
                                         </div>
                                     </form>
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === "whatsapp" && (
+                            <div className="space-y-6">
+                                <div className="flex justify-between items-center border-b border-white/10 pb-4">
+                                    <h3 className="text-lg font-medium text-green-400 flex items-center gap-2">
+                                        <MessageCircle size={20} /> Notificaciones de WhatsApp
+                                    </h3>
+                                    <button onClick={() => fetchCatalogs(localStorage.getItem('token')!)} className="text-gray-400 hover:text-white transition-colors" title="Actualizar estado">
+                                        <RefreshCw size={16} />
+                                    </button>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <div className="space-y-6">
+                                        <div className="bg-black/40 border border-white/10 p-6 rounded-2xl">
+                                            <h4 className="text-md font-medium mb-4">Estado de Conexión</h4>
+                                            {whatsappStatus?.status === 'CONNECTED' ? (
+                                                <div className="flex items-center gap-3 text-green-400 bg-green-500/10 p-4 rounded-xl border border-green-500/20">
+                                                    <Check size={24} />
+                                                    <div>
+                                                        <p className="font-bold">WhatsApp Conectado</p>
+                                                        <p className="text-sm text-green-400/80 mt-1">Aura está lista para enviar notificaciones desde este dispositivo.</p>
+                                                    </div>
+                                                </div>
+                                            ) : whatsappStatus?.status === 'QR_READY' && whatsappStatus?.qrCode ? (
+                                                <div className="flex flex-col items-center gap-4 bg-white p-6 rounded-xl">
+                                                    <img src={whatsappStatus.qrCode} alt="WhatsApp QR Code" className="w-64 h-64 border border-gray-200" />
+                                                    <p className="text-sm text-gray-800 text-center font-medium">Abre WhatsApp en tu celular (cuenta Business o Personal), ve a Dispositivos Vinculados y escanea este código QR.</p>
+                                                </div>
+                                            ) : (
+                                                <div className="flex items-center gap-3 text-amber-400 bg-amber-500/10 p-4 rounded-xl border border-amber-500/20">
+                                                    <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-amber-400"></div>
+                                                    <div>
+                                                        <p className="font-bold">Inicializando...</p>
+                                                        <p className="text-sm text-amber-400/80">Por favor, espera unos segundos y actualiza.</p>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-black/40 border border-white/10 p-6 rounded-2xl h-fit">
+                                        <h4 className="text-md font-medium mb-4">Configurar Destinatarios</h4>
+                                        <p className="text-sm text-gray-400 mb-6">
+                                            Ingresa los números de teléfono (con código de país, sin el +, ej. 50688888888) que recibirán las notificaciones del buzón. Separa múltiples números con comas.
+                                        </p>
+                                        <form onSubmit={handleSaveWhatsappNumbers} className="space-y-4">
+                                            <div>
+                                                <label className="block text-xs text-gray-400 mb-1">Números de Teléfono</label>
+                                                <input 
+                                                    value={whatsappNumbers} 
+                                                    onChange={e => setWhatsappNumbers(e.target.value)}
+                                                    placeholder="50688888888, 50699999999" 
+                                                    className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500" 
+                                                />
+                                            </div>
+                                            <button type="submit" className="w-full bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-[0_0_10px_rgba(34,197,94,0.2)]">
+                                                Guardar Números
+                                            </button>
+                                        </form>
+                                    </div>
                                 </div>
                             </div>
                         )}

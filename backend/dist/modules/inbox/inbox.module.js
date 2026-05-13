@@ -17,12 +17,13 @@ const prisma_module_1 = require("../../prisma/prisma.module");
 const schedule_1 = require("@nestjs/schedule");
 const inbox_rules_module_1 = require("../inbox-rules/inbox-rules.module");
 const recurring_events_module_1 = require("../recurring-events/recurring-events.module");
+const whatsapp_module_1 = require("../whatsapp/whatsapp.module");
 let InboxModule = class InboxModule {
 };
 exports.InboxModule = InboxModule;
 exports.InboxModule = InboxModule = __decorate([
     (0, common_1.Module)({
-        imports: [prisma_module_1.PrismaModule, schedule_1.ScheduleModule.forRoot(), inbox_rules_module_1.InboxRulesModule, recurring_events_module_1.RecurringEventsModule],
+        imports: [prisma_module_1.PrismaModule, schedule_1.ScheduleModule.forRoot(), inbox_rules_module_1.InboxRulesModule, recurring_events_module_1.RecurringEventsModule, whatsapp_module_1.WhatsAppModule],
         controllers: [inbox_controller_1.InboxController],
         providers: [inbox_service_1.InboxService, imap_service_1.ImapService, parser_service_1.ParserService, inbox_cron_1.InboxCronService],
         exports: [inbox_service_1.InboxService],

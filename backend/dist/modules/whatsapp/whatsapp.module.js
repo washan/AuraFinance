@@ -6,20 +6,21 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ParametersModule = void 0;
+exports.WhatsAppModule = void 0;
 const common_1 = require("@nestjs/common");
-const parameters_service_1 = require("./parameters.service");
-const parameters_controller_1 = require("./parameters.controller");
+const whatsapp_service_1 = require("./whatsapp.service");
+const whatsapp_controller_1 = require("./whatsapp.controller");
+const parameters_module_1 = require("../parameters/parameters.module");
 const prisma_module_1 = require("../../prisma/prisma.module");
-let ParametersModule = class ParametersModule {
+let WhatsAppModule = class WhatsAppModule {
 };
-exports.ParametersModule = ParametersModule;
-exports.ParametersModule = ParametersModule = __decorate([
+exports.WhatsAppModule = WhatsAppModule;
+exports.WhatsAppModule = WhatsAppModule = __decorate([
     (0, common_1.Module)({
-        imports: [prisma_module_1.PrismaModule],
-        providers: [parameters_service_1.ParametersService],
-        controllers: [parameters_controller_1.ParametersController],
-        exports: [parameters_service_1.ParametersService]
+        imports: [parameters_module_1.ParametersModule, prisma_module_1.PrismaModule],
+        providers: [whatsapp_service_1.WhatsAppService],
+        controllers: [whatsapp_controller_1.WhatsAppController],
+        exports: [whatsapp_service_1.WhatsAppService],
     })
-], ParametersModule);
-//# sourceMappingURL=parameters.module.js.map
+], WhatsAppModule);
+//# sourceMappingURL=whatsapp.module.js.map
