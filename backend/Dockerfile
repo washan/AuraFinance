@@ -22,6 +22,7 @@ RUN apt-get update && apt-get install -y \
 # Configura variables de entorno para que Puppeteer use el Chromium que acabamos de instalar
 ENV CHROME_BIN=/usr/bin/chromium
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+ENV NODE_OPTIONS="--max-old-space-size=256"
 
 # Directorio de trabajo en el contenedor
 WORKDIR /app
