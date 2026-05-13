@@ -31,6 +31,7 @@ export class WhatsAppService implements OnModuleInit, OnModuleDestroy {
         this.client = new Client({
             authStrategy: new LocalAuth(),
             puppeteer: {
+                dumpio: true,
                 args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-accelerated-2d-canvas', '--no-first-run', '--no-zygote', '--disable-gpu'],
                 executablePath: process.env.CHROME_BIN || (process.platform === 'win32' ? 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe' : undefined),
             },
@@ -48,6 +49,14 @@ export class WhatsAppService implements OnModuleInit, OnModuleDestroy {
             } catch (err) {
                 this.logger.error('Failed to generate QR Code Data URL', err);
             }
+        });
+
+        this.client.on('auth_failure', msg => {
+            this.logger.error('WhatsApp authentication failure', msg);
+        });
+
+        this.client.on('loading_screen', (percent, message) => {
+            this.logger.log(`WhatsApp loading screen: ${percent}% - ${message}`);
         });
 
         this.client.on('ready', () => {
