@@ -1,13 +1,15 @@
 import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
-import { Client, LocalAuth } from 'whatsapp-web.js';
+import { makeWASocket, DisconnectReason, BufferJSON, initAuthCreds, SignalDataTypeMap, AuthenticationState } from '@whiskeysockets/baileys';
+import { Boom } from '@hapi/boom';
 import * as qrcode from 'qrcode';
+import pino from 'pino';
 import { ParametersService } from '../parameters/parameters.service';
 import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class WhatsAppService implements OnModuleInit, OnModuleDestroy {
     private readonly logger = new Logger(WhatsAppService.name);
-    private client: Client;
+    private client: any;
     private qrCodeDataUrl: string | null = null;
     private status: 'INITIALIZING' | 'QR_READY' | 'CONNECTED' | 'DISCONNECTED' = 'INITIALIZING';
 
@@ -22,92 +24,142 @@ export class WhatsAppService implements OnModuleInit, OnModuleDestroy {
 
     async onModuleDestroy() {
         if (this.client) {
-            await this.client.destroy();
+            this.client.end(undefined);
         }
     }
 
-    private initializeClient() {
-        this.logger.log('Initializing WhatsApp client...');
-        this.client = new Client({
-            authStrategy: new LocalAuth(),
-            puppeteer: {
-                dumpio: true,
-                args: [
-                    '--no-sandbox', 
-                    '--disable-setuid-sandbox', 
-                    '--disable-dev-shm-usage', 
-                    '--disable-accelerated-2d-canvas', 
-                    '--no-first-run', 
-                    '--no-zygote', 
-                    '--disable-gpu',
-                    '--disable-extensions',
-                    '--disable-default-apps',
-                    '--disable-background-networking',
-                    '--disable-background-timer-throttling',
-                    '--disable-backgrounding-occluded-windows',
-                    '--disable-renderer-backgrounding',
-                    '--disable-sync',
-                    '--metrics-recording-only',
-                    '--mute-audio',
-                    '--safebrowsing-disable-auto-update',
-                    '--js-flags=--max-old-space-size=128'
-                ],
-                executablePath: process.env.CHROME_BIN || (process.platform === 'win32' ? 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe' : undefined),
+    private async usePrismaAuthState(): Promise<{ state: AuthenticationState, saveCreds: () => Promise<void> }> {
+        const readData = async (key: string) => {
+            try {
+                const row = await this.prisma.whatsAppSession.findUnique({ where: { key } });
+                if (!row) return null;
+                return JSON.parse(row.data, BufferJSON.reviver);
+            } catch (err) {
+                this.logger.error(`Error reading ${key} from DB`, err);
+                return null;
+            }
+        };
+        const writeData = async (data: any, key: string) => {
+            try {
+                const dataStr = JSON.stringify(data, BufferJSON.replacer);
+                await this.prisma.whatsAppSession.upsert({
+                    where: { key },
+                    update: { data: dataStr },
+                    create: { key, data: dataStr },
+                });
+            } catch (err) {
+                this.logger.error(`Error writing ${key} to DB`, err);
+            }
+        };
+        const removeData = async (key: string) => {
+            try {
+                await this.prisma.whatsAppSession.delete({ where: { key } });
+            } catch {
+                // Ignore if doesn't exist
+            }
+        };
+
+        const creds = await readData('creds') || initAuthCreds();
+
+        return {
+            state: {
+                creds,
+                keys: {
+                    get: async (type, ids) => {
+                        const data: { [id: string]: SignalDataTypeMap[typeof type] } = {};
+                        for (const id of ids) {
+                            let value = await readData(`${type}-${id}`);
+                            if (type === 'app-state-sync-key' && value) {
+                                // Baileys auto-handles app-state-sync-key parsing if structured right,
+                                // but we rely on BufferJSON for safety
+                            }
+                            data[id] = value;
+                        }
+                        return data;
+                    },
+                    set: async (data: any) => {
+                        const tasks: (() => Promise<any>)[] = [];
+                        for (const category in data) {
+                            for (const id in data[category]) {
+                                const value = data[category][id];
+                                const key = `${category}-${id}`;
+                                tasks.push(() => value ? writeData(value, key) : removeData(key));
+                            }
+                        }
+                        // Process in small batches to avoid exhausting the DB connection pool
+                        const BATCH_SIZE = 5;
+                        for (let i = 0; i < tasks.length; i += BATCH_SIZE) {
+                            const batch = tasks.slice(i, i + BATCH_SIZE).map(fn => fn());
+                            await Promise.all(batch);
+                        }
+                    }
+                }
             },
-            webVersionCache: {
-                type: 'remote',
-                remotePath: 'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.2412.54.html',
-            }
-        });
+            saveCreds: () => writeData(creds, 'creds')
+        };
+    }
 
-        this.client.on('qr', async (qr) => {
-            this.logger.log('WhatsApp QR Code received. Awaiting scan...');
-            this.status = 'QR_READY';
-            try {
-                this.qrCodeDataUrl = await qrcode.toDataURL(qr);
-            } catch (err) {
-                this.logger.error('Failed to generate QR Code Data URL', err);
-            }
-        });
+    private async initializeClient() {
+        this.logger.log('Initializing WhatsApp client (Baileys)...');
+        this.status = 'INITIALIZING';
 
-        this.client.on('auth_failure', msg => {
-            this.logger.error('WhatsApp authentication failure', msg);
-        });
-
-        this.client.on('loading_screen', (percent, message) => {
-            this.logger.log(`WhatsApp loading screen: ${percent}% - ${message}`);
-        });
-
-        this.client.on('ready', () => {
-            this.logger.log('WhatsApp client is ready and connected!');
-            this.status = 'CONNECTED';
-            this.qrCodeDataUrl = null;
-        });
-
-        this.client.on('disconnected', async (reason) => {
-            this.logger.warn(`WhatsApp client disconnected: ${reason}`);
-            this.status = 'DISCONNECTED';
-            this.qrCodeDataUrl = null;
+        try {
+            const { state, saveCreds } = await this.usePrismaAuthState();
             
-            try {
-                // IMPORTANT: Destroy the client to kill the background Chrome process and free RAM
-                this.logger.log('Destroying WhatsApp client to free resources...');
-                await this.client.destroy();
-            } catch (err) {
-                this.logger.error('Error while destroying WhatsApp client', err);
-            }
+            const pinoLogger = pino({ level: 'silent' });
 
-            // Auto-restart after disconnection by completely re-initializing
+            this.client = makeWASocket({
+                auth: state,
+                printQRInTerminal: false,
+                logger: pinoLogger,
+                browser: ['Aura Finance', 'Chrome', '10.0'],
+            });
+
+            this.client.ev.on('creds.update', saveCreds);
+
+            this.client.ev.on('connection.update', async (update: any) => {
+                const { connection, lastDisconnect, qr } = update;
+
+                if (qr) {
+                    this.logger.log('WhatsApp QR Code received. Awaiting scan...');
+                    this.status = 'QR_READY';
+                    try {
+                        this.qrCodeDataUrl = await qrcode.toDataURL(qr);
+                    } catch (err) {
+                        this.logger.error('Failed to generate QR Code Data URL', err);
+                    }
+                }
+
+                if (connection === 'close') {
+                    this.status = 'DISCONNECTED';
+                    this.qrCodeDataUrl = null;
+                    const shouldReconnect = (lastDisconnect?.error as Boom)?.output?.statusCode !== DisconnectReason.loggedOut;
+                    
+                    this.logger.warn(`WhatsApp connection closed due to: ${lastDisconnect?.error}. Reconnecting: ${shouldReconnect}`);
+                    
+                    // If logged out, clear DB state
+                    if (!shouldReconnect) {
+                        this.logger.warn('User logged out. Clearing auth state from database.');
+                        await this.prisma.whatsAppSession.deleteMany({});
+                    }
+                    
+                    // Always reconnect (if logged out, it will generate a new QR)
+                    setTimeout(() => {
+                        this.initializeClient();
+                    }, 5000);
+                } else if (connection === 'open') {
+                    this.logger.log('WhatsApp client is ready and connected!');
+                    this.status = 'CONNECTED';
+                    this.qrCodeDataUrl = null;
+                }
+            });
+        } catch (error) {
+            this.logger.error('Failed to initialize WhatsApp client', error);
+            // Retry later
             setTimeout(() => {
-                this.status = 'INITIALIZING';
-                // Re-create the client and bind events from scratch
                 this.initializeClient();
             }, 5000);
-        });
-
-        this.client.initialize().catch(err => {
-            this.logger.error('Failed to initialize WhatsApp client. Check if Chrome path is correct.', err);
-        });
+        }
     }
 
     getStatus() {
@@ -121,7 +173,7 @@ export class WhatsAppService implements OnModuleInit, OnModuleDestroy {
      * Helper to send generic messages to configured users.
      */
     async sendMessageToConfiguredNumbers(userId: string, message: string) {
-        if (this.status !== 'CONNECTED') {
+        if (this.status !== 'CONNECTED' || !this.client) {
             this.logger.warn('Cannot send WhatsApp message: Client is not connected');
             return false;
         }
@@ -137,9 +189,10 @@ export class WhatsAppService implements OnModuleInit, OnModuleDestroy {
             
             let success = true;
             for (const number of numbers) {
-                const formattedNumber = `${number}@c.us`;
+                // Baileys format: [countrycode][number]@s.whatsapp.net
+                const formattedNumber = `${number}@s.whatsapp.net`;
                 try {
-                    await this.client.sendMessage(formattedNumber, message);
+                    await this.client.sendMessage(formattedNumber, { text: message });
                     this.logger.log(`WhatsApp message sent to ${number}`);
                 } catch (sendErr) {
                     this.logger.error(`Failed to send WhatsApp to ${number}`, sendErr);
