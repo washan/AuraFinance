@@ -39,10 +39,12 @@ export declare class InvestmentsService {
         analysis: string | undefined;
     }>;
     getHistory(householdId: string): Promise<{
-        date: Date;
-        invested: number;
-        marketValue: number;
-        monthLabel: string;
+        date: any;
+        invested: any;
+        marketValue: any;
+        monthLabel: any;
+        monthlyContribution: number;
+        monthlyPl: number;
     }[]>;
     getTransactions(householdId: string): Promise<({
         account: {

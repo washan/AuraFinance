@@ -1,11 +1,13 @@
 import { PrismaService } from '../../prisma/prisma.service';
 import { ImapService } from './services/imap.service';
 import { InboxRulesService } from '../inbox-rules/inbox-rules.service';
+import { BudgetsService } from '../budgets/budgets.service';
 export declare class InboxService {
     private prisma;
     private imapService;
     private inboxRulesService;
-    constructor(prisma: PrismaService, imapService: ImapService, inboxRulesService: InboxRulesService);
+    private budgetsService;
+    constructor(prisma: PrismaService, imapService: ImapService, inboxRulesService: InboxRulesService, budgetsService: BudgetsService);
     getPendingTransactions(userId: string): Promise<{
         matchedRule: {
             name: string;
@@ -14,6 +16,7 @@ export declare class InboxService {
             projectId: string | null;
             goalId: string | null;
         } | null;
+        budgetStatus: string | null;
         currency: string;
         id: string;
         status: string;

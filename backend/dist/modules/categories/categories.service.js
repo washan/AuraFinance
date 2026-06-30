@@ -51,13 +51,13 @@ let CategoriesService = class CategoriesService {
     async deleteCategory(householdId, categoryId) {
         const category = await this.prisma.category.findFirst({
             where: { id: categoryId, householdId },
-            include: { _count: { select: { items: true, budgets: true } } }
+            include: { _count: { select: { items: true } } }
         });
         if (!category) {
             throw new common_1.NotFoundException('Categoría no encontrada');
         }
-        if (category._count.items > 0 || category._count.budgets > 0) {
-            throw new common_1.ConflictException('No se puede eliminar la categoría porque tiene elementos o presupuestos asociados.');
+        if (category._count.items > 0) {
+            throw new common_1.ConflictException('No se puede eliminar la categoría porque tiene elementos asociados.');
         }
         return this.prisma.category.delete({
             where: { id: categoryId }

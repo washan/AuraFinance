@@ -14,14 +14,18 @@ const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../../prisma/prisma.service");
 const imap_service_1 = require("./services/imap.service");
 const inbox_rules_service_1 = require("../inbox-rules/inbox-rules.service");
+const budgets_service_1 = require("../budgets/budgets.service");
+const date_fns_1 = require("date-fns");
 let InboxService = class InboxService {
     prisma;
     imapService;
     inboxRulesService;
-    constructor(prisma, imapService, inboxRulesService) {
+    budgetsService;
+    constructor(prisma, imapService, inboxRulesService, budgetsService) {
         this.prisma = prisma;
         this.imapService = imapService;
         this.inboxRulesService = inboxRulesService;
+        this.budgetsService = budgetsService;
     }
     async getPendingTransactions(userId) {
         const user = await this.prisma.user.findUnique({
@@ -40,9 +44,27 @@ let InboxService = class InboxService {
             },
             orderBy: { date: 'desc' }
         });
+        const currentPeriod = (0, date_fns_1.format)(new Date(), 'MM-yyyy');
+        const budgetSummary = await this.budgetsService.getBudgetSummary(user.householdId, currentPeriod);
         const enriched = await Promise.all(transactions.map(async (tx) => {
             const matchedRule = await this.inboxRulesService.applyRules(user.householdId, tx.merchant);
-            return { ...tx, matchedRule };
+            let budgetStatus = null;
+            if (matchedRule && matchedRule.itemId) {
+                const budget = budgetSummary.find((b) => b.itemId === matchedRule.itemId);
+                if (budget && budget.formulated > 0) {
+                    const newTotal = budget.consumed + Number(tx.amount);
+                    if (newTotal > budget.formulated) {
+                        budgetStatus = 'EXCEEDED';
+                    }
+                    else if (newTotal > budget.formulated * 0.8) {
+                        budgetStatus = 'WARNING';
+                    }
+                    else {
+                        budgetStatus = 'OK';
+                    }
+                }
+            }
+            return { ...tx, matchedRule, budgetStatus };
         }));
         return enriched;
     }
@@ -145,6 +167,7 @@ exports.InboxService = InboxService = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
         imap_service_1.ImapService,
-        inbox_rules_service_1.InboxRulesService])
+        inbox_rules_service_1.InboxRulesService,
+        budgets_service_1.BudgetsService])
 ], InboxService);
 //# sourceMappingURL=inbox.service.js.map

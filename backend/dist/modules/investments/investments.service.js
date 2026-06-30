@@ -151,6 +151,7 @@ let InvestmentsService = class InvestmentsService {
             }
             const ai = new genai_1.GoogleGenAI({ apiKey: param.value });
             const portfolio = await this.getPortfolio(householdId);
+            const history = await this.getHistory(householdId);
             let newsContext = '';
             try {
                 const uniqueSymbols = Array.from(new Set(portfolio.positions.map((p) => p.symbol)));
@@ -190,10 +191,12 @@ Total Market Value: $${portfolio.totalMarketValue}
 Total Invested: $${portfolio.totalInvested}
 Unrealized P&L: $${portfolio.totalUnrealizedPl}
 Positions: ${JSON.stringify(portfolio.positions, null, 2)}
+Recent 12-Month History: ${JSON.stringify(history, null, 2)}
 ${newsContext}
 
 Provide a brief (2-3 paragraphs max) analysis of this portfolio. Mention any concentration risks, performance highlights, and a piece of general advice. 
 IMPORTANT: Use the provided "CONTEXTO DE MERCADO EN TIEMPO REAL" to explain potential reasons for current market movements or the portfolio's performance. Often, specific ticker news might be irrelevant or noisy; if so, rely entirely on the "Noticias Generales del Mercado y S&P 500" to explain macroeconomic trends (e.g., interest rates, geopolitical events running the market broadly). Connect the macro news to the portfolio's performance.
+Also, briefly analyze the 12-Month History data provided: evaluate my monthly contribution consistency (monthlyContribution) and comment on my monthly P&L trend (monthlyPl). Encourage me if I have been consistently adding funds.
 
 Write the response natively in Spanish. Format in markdown avoiding complex layout. Focus on the actual numbers shown in the prompt and the provided news context.
       `;
@@ -215,11 +218,11 @@ Write the response natively in Spanish. Format in markdown avoiding complex layo
                 transactions: { orderBy: { date: 'asc' } },
             },
         });
-        const history = [];
+        const historyData = [];
         const now = new Date();
-        for (let i = 5; i >= 0; i--) {
+        for (let i = 12; i >= 0; i--) {
             const d = new Date(now.getFullYear(), now.getMonth() - i + 1, 0);
-            history.push({
+            historyData.push({
                 date: d,
                 invested: 0,
                 marketValue: 0,
@@ -245,7 +248,7 @@ Write the response natively in Spanish. Format in markdown avoiding complex layo
             catch (error) {
                 console.error(`Failed to fetch history for ${inst.symbol}`, error.message);
             }
-            for (let h of history) {
+            for (let h of historyData) {
                 let position = 0;
                 let costBasis = 0;
                 for (const t of inst.transactions) {
@@ -285,7 +288,22 @@ Write the response natively in Spanish. Format in markdown avoiding complex layo
                 }
             }
         }
-        return history;
+        const finalHistory = [];
+        for (let i = 1; i < historyData.length; i++) {
+            const current = historyData[i];
+            const prev = historyData[i - 1];
+            const monthlyContribution = current.invested - prev.invested;
+            const monthlyPl = current.marketValue - prev.marketValue - monthlyContribution;
+            finalHistory.push({
+                date: current.date,
+                invested: current.invested,
+                marketValue: current.marketValue,
+                monthLabel: current.monthLabel,
+                monthlyContribution,
+                monthlyPl
+            });
+        }
+        return finalHistory;
     }
     async getTransactions(householdId) {
         return this.prisma.investmentTransaction.findMany({

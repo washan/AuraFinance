@@ -67,11 +67,13 @@ export declare class BackupService {
                 targetDate: Date | null;
             })[];
             budgets: {
+                currency: string;
                 id: string;
                 householdId: string;
-                categoryId: string;
+                itemId: string;
                 limitAmount: import("@prisma/client/runtime/library").Decimal;
-                period: string;
+                isBase: boolean;
+                period: string | null;
             }[];
             inboxRules: {
                 name: string;

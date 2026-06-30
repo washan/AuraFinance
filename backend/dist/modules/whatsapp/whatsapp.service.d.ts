@@ -11,6 +11,7 @@ export declare class WhatsAppService implements OnModuleInit, OnModuleDestroy {
     constructor(parametersService: ParametersService, prisma: PrismaService);
     onModuleInit(): Promise<void>;
     onModuleDestroy(): Promise<void>;
+    private usePrismaAuthState;
     private initializeClient;
     getStatus(): {
         status: "INITIALIZING" | "QR_READY" | "CONNECTED" | "DISCONNECTED";

@@ -41,12 +41,16 @@ var __importStar = (this && this.__importStar) || (function () {
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 var WhatsAppService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.WhatsAppService = void 0;
 const common_1 = require("@nestjs/common");
-const whatsapp_web_js_1 = require("whatsapp-web.js");
+const baileys_1 = require("@whiskeysockets/baileys");
 const qrcode = __importStar(require("qrcode"));
+const pino_1 = __importDefault(require("pino"));
 const parameters_service_1 = require("../parameters/parameters.service");
 const prisma_service_1 = require("../../prisma/prisma.service");
 let WhatsAppService = WhatsAppService_1 = class WhatsAppService {
@@ -65,52 +69,128 @@ let WhatsAppService = WhatsAppService_1 = class WhatsAppService {
     }
     async onModuleDestroy() {
         if (this.client) {
-            await this.client.destroy();
+            this.client.end(undefined);
         }
     }
-    initializeClient() {
-        this.logger.log('Initializing WhatsApp client...');
-        this.client = new whatsapp_web_js_1.Client({
-            authStrategy: new whatsapp_web_js_1.LocalAuth(),
-            puppeteer: {
-                executablePath: 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
-                args: ['--no-sandbox', '--disable-setuid-sandbox'],
-            }
-        });
-        this.client.on('qr', async (qr) => {
-            this.logger.log('WhatsApp QR Code received. Awaiting scan...');
-            this.status = 'QR_READY';
+    async usePrismaAuthState() {
+        const readData = async (key) => {
             try {
-                this.qrCodeDataUrl = await qrcode.toDataURL(qr);
+                const row = await this.prisma.whatsAppSession.findUnique({ where: { key } });
+                if (!row)
+                    return null;
+                return JSON.parse(row.data, baileys_1.BufferJSON.reviver);
             }
             catch (err) {
-                this.logger.error('Failed to generate QR Code Data URL', err);
+                this.logger.error(`Error reading ${key} from DB`, err);
+                return null;
             }
-        });
-        this.client.on('ready', () => {
-            this.logger.log('WhatsApp client is ready and connected!');
-            this.status = 'CONNECTED';
-            this.qrCodeDataUrl = null;
-        });
-        this.client.on('disconnected', async (reason) => {
-            this.logger.warn(`WhatsApp client disconnected: ${reason}`);
-            this.status = 'DISCONNECTED';
-            this.qrCodeDataUrl = null;
+        };
+        const writeData = async (data, key) => {
             try {
-                this.logger.log('Destroying WhatsApp client to free resources...');
-                await this.client.destroy();
+                const dataStr = JSON.stringify(data, baileys_1.BufferJSON.replacer);
+                await this.prisma.whatsAppSession.upsert({
+                    where: { key },
+                    update: { data: dataStr },
+                    create: { key, data: dataStr },
+                });
             }
             catch (err) {
-                this.logger.error('Error while destroying WhatsApp client', err);
+                this.logger.error(`Error writing ${key} to DB`, err);
             }
+        };
+        const removeData = async (key) => {
+            try {
+                await this.prisma.whatsAppSession.delete({ where: { key } });
+            }
+            catch {
+            }
+        };
+        const creds = await readData('creds') || (0, baileys_1.initAuthCreds)();
+        return {
+            state: {
+                creds,
+                keys: {
+                    get: async (type, ids) => {
+                        const data = {};
+                        for (const id of ids) {
+                            let value = await readData(`${type}-${id}`);
+                            if (type === 'app-state-sync-key' && value) {
+                            }
+                            data[id] = value;
+                        }
+                        return data;
+                    },
+                    set: async (data) => {
+                        const tasks = [];
+                        for (const category in data) {
+                            for (const id in data[category]) {
+                                const value = data[category][id];
+                                const key = `${category}-${id}`;
+                                tasks.push(() => value ? writeData(value, key) : removeData(key));
+                            }
+                        }
+                        const BATCH_SIZE = 5;
+                        for (let i = 0; i < tasks.length; i += BATCH_SIZE) {
+                            const batch = tasks.slice(i, i + BATCH_SIZE).map(fn => fn());
+                            await Promise.all(batch);
+                        }
+                    }
+                }
+            },
+            saveCreds: () => writeData(creds, 'creds')
+        };
+    }
+    async initializeClient() {
+        this.logger.log('Initializing WhatsApp client (Baileys)...');
+        this.status = 'INITIALIZING';
+        try {
+            const { state, saveCreds } = await this.usePrismaAuthState();
+            const pinoLogger = (0, pino_1.default)({ level: 'silent' });
+            this.client = (0, baileys_1.makeWASocket)({
+                auth: state,
+                printQRInTerminal: false,
+                logger: pinoLogger,
+                browser: ['Aura Finance', 'Chrome', '10.0'],
+            });
+            this.client.ev.on('creds.update', saveCreds);
+            this.client.ev.on('connection.update', async (update) => {
+                const { connection, lastDisconnect, qr } = update;
+                if (qr) {
+                    this.logger.log('WhatsApp QR Code received. Awaiting scan...');
+                    this.status = 'QR_READY';
+                    try {
+                        this.qrCodeDataUrl = await qrcode.toDataURL(qr);
+                    }
+                    catch (err) {
+                        this.logger.error('Failed to generate QR Code Data URL', err);
+                    }
+                }
+                if (connection === 'close') {
+                    this.status = 'DISCONNECTED';
+                    this.qrCodeDataUrl = null;
+                    const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== baileys_1.DisconnectReason.loggedOut;
+                    this.logger.warn(`WhatsApp connection closed due to: ${lastDisconnect?.error}. Reconnecting: ${shouldReconnect}`);
+                    if (!shouldReconnect) {
+                        this.logger.warn('User logged out. Clearing auth state from database.');
+                        await this.prisma.whatsAppSession.deleteMany({});
+                    }
+                    setTimeout(() => {
+                        this.initializeClient();
+                    }, 5000);
+                }
+                else if (connection === 'open') {
+                    this.logger.log('WhatsApp client is ready and connected!');
+                    this.status = 'CONNECTED';
+                    this.qrCodeDataUrl = null;
+                }
+            });
+        }
+        catch (error) {
+            this.logger.error('Failed to initialize WhatsApp client', error);
             setTimeout(() => {
-                this.status = 'INITIALIZING';
                 this.initializeClient();
             }, 5000);
-        });
-        this.client.initialize().catch(err => {
-            this.logger.error('Failed to initialize WhatsApp client. Check if Chrome path is correct.', err);
-        });
+        }
     }
     getStatus() {
         return {
@@ -119,7 +199,7 @@ let WhatsAppService = WhatsAppService_1 = class WhatsAppService {
         };
     }
     async sendMessageToConfiguredNumbers(userId, message) {
-        if (this.status !== 'CONNECTED') {
+        if (this.status !== 'CONNECTED' || !this.client) {
             this.logger.warn('Cannot send WhatsApp message: Client is not connected');
             return false;
         }
@@ -132,9 +212,9 @@ let WhatsAppService = WhatsAppService_1 = class WhatsAppService {
             const numbers = param.value.split(',').map(n => n.trim()).filter(n => n.length > 0);
             let success = true;
             for (const number of numbers) {
-                const formattedNumber = `${number}@c.us`;
+                const formattedNumber = `${number}@s.whatsapp.net`;
                 try {
-                    await this.client.sendMessage(formattedNumber, message);
+                    await this.client.sendMessage(formattedNumber, { text: message });
                     this.logger.log(`WhatsApp message sent to ${number}`);
                 }
                 catch (sendErr) {

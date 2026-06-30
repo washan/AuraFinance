@@ -29,12 +29,13 @@ const planned_transactions_module_1 = require("./modules/planned-transactions/pl
 const assets_module_1 = require("./modules/assets/assets.module");
 const investments_module_1 = require("./modules/investments/investments.module");
 const whatsapp_module_1 = require("./modules/whatsapp/whatsapp.module");
+const budgets_module_1 = require("./modules/budgets/budgets.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
 exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
-        imports: [users_module_1.UsersModule, auth_module_1.AuthModule, prisma_module_1.PrismaModule, accounts_module_1.AccountsModule, transactions_module_1.TransactionsModule, currencies_module_1.CurrenciesModule, categories_module_1.CategoriesModule, dashboard_module_1.DashboardModule, projects_module_1.ProjectsModule, goals_module_1.GoalsModule, inbox_module_1.InboxModule, inbox_rules_module_1.InboxRulesModule, recurring_events_module_1.RecurringEventsModule, parameters_module_1.ParametersModule, backup_module_1.BackupModule, planned_transactions_module_1.PlannedTransactionsModule, assets_module_1.AssetsModule, investments_module_1.InvestmentsModule, whatsapp_module_1.WhatsAppModule],
+        imports: [users_module_1.UsersModule, auth_module_1.AuthModule, prisma_module_1.PrismaModule, accounts_module_1.AccountsModule, transactions_module_1.TransactionsModule, currencies_module_1.CurrenciesModule, categories_module_1.CategoriesModule, dashboard_module_1.DashboardModule, projects_module_1.ProjectsModule, goals_module_1.GoalsModule, inbox_module_1.InboxModule, inbox_rules_module_1.InboxRulesModule, recurring_events_module_1.RecurringEventsModule, parameters_module_1.ParametersModule, backup_module_1.BackupModule, planned_transactions_module_1.PlannedTransactionsModule, assets_module_1.AssetsModule, investments_module_1.InvestmentsModule, whatsapp_module_1.WhatsAppModule, budgets_module_1.BudgetsModule],
         controllers: [app_controller_1.AppController],
         providers: [app_service_1.AppService],
     })

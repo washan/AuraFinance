@@ -91,7 +91,7 @@ export class BudgetsService {
     const consumedMap = new Map<string, number>();
     transactions.forEach((t: any) => {
       const current = consumedMap.get(t.itemId!) || 0;
-      consumedMap.set(t.itemId!, current + Number(t.amountBase));
+      consumedMap.set(t.itemId!, current + Math.abs(Number(t.amountBase)));
     });
 
     // 5. Build response

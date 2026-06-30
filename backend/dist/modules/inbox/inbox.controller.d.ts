@@ -11,6 +11,7 @@ export declare class InboxController {
             projectId: string | null;
             goalId: string | null;
         } | null;
+        budgetStatus: string | null;
         currency: string;
         id: string;
         status: string;
