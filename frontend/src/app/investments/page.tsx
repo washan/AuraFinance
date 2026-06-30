@@ -7,6 +7,7 @@ import { Bell, Plus, TrendingUp, TrendingDown, DollarSign, BrainCircuit, Refresh
 import { getPortfolio, getAiInsights, PortfolioSummary } from "@/services/investmentService";
 import { AddInvestmentModal } from "@/components/investments/AddInvestmentModal";
 import { TransactionsHistoryModal } from "@/components/investments/TransactionsHistoryModal";
+import { InvestmentHistoryChart } from "@/components/investments/InvestmentHistoryChart";
 import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, Legend, ResponsiveContainer } from 'recharts';
 
 const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#06b6d4', '#f43f5e', '#84cc16'];
@@ -15,6 +16,7 @@ export default function InvestmentsPage() {
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
+    const [token, setToken] = useState<string>("");
     const [portfolio, setPortfolio] = useState<PortfolioSummary | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isHistoryOpen, setIsHistoryOpen] = useState(false);
@@ -29,11 +31,12 @@ export default function InvestmentsPage() {
     const [aiError, setAiError] = useState<string | null>(null);
 
     useEffect(() => {
-        const token = localStorage.getItem("token");
-        if (!token) {
+        const localToken = localStorage.getItem("token");
+        if (!localToken) {
             router.push("/auth");
         } else {
-            fetchData(token);
+            setToken(localToken);
+            fetchData(localToken);
         }
     }, [router]);
 
@@ -268,6 +271,15 @@ export default function InvestmentsPage() {
                             )}
                         </div>
                     </div>
+
+                    {/* Investment History Chart */}
+                    {token && (
+                        <InvestmentHistoryChart 
+                            token={token} 
+                            isColones={isColones} 
+                            exchangeRate={exchangeRate} 
+                        />
+                    )}
 
                     {/* ETF Distribution Chart */}
                     <div className="bg-white/5 border border-white/10 rounded-3xl p-6 md:p-8 relative overflow-hidden">

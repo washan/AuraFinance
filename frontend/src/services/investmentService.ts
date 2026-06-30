@@ -34,6 +34,8 @@ export interface InvestmentHistoryPoint {
   invested: number;
   marketValue: number;
   monthLabel: string;
+  monthlyContribution: number;
+  monthlyPl: number;
 }
 
 export const getInvestmentHistory = async (token: string): Promise<InvestmentHistoryPoint[]> => {
