@@ -12,8 +12,8 @@ export declare class InboxController {
             goalId: string | null;
         } | null;
         budgetStatus: string | null;
-        currency: string;
         id: string;
+        currency: string;
         status: string;
         bankConnectionId: string | null;
         recurringEventId: string | null;
@@ -30,8 +30,8 @@ export declare class InboxController {
         updatedAt: Date;
     }[]>;
     processTransaction(id: string, req: Request): Promise<{
-        currency: string;
         id: string;
+        currency: string;
         status: string;
         bankConnectionId: string | null;
         recurringEventId: string | null;
@@ -48,8 +48,8 @@ export declare class InboxController {
         updatedAt: Date;
     }>;
     dismissTransaction(id: string, req: Request): Promise<{
-        currency: string;
         id: string;
+        currency: string;
         status: string;
         bankConnectionId: string | null;
         recurringEventId: string | null;
@@ -71,34 +71,34 @@ export declare class InboxController {
     }>;
     getConnections(req: Request): Promise<{
         id: string;
-        isActive: boolean;
         createdAt: Date;
         provider: string;
         emailAddress: string;
+        isActive: boolean;
         lastSyncAt: Date | null;
     }[]>;
     createConnection(req: Request): Promise<{
         id: string;
         householdId: string;
-        isActive: boolean;
         userId: string;
         createdAt: Date;
         updatedAt: Date;
         provider: string;
         emailAddress: string;
         appPassword: string;
+        isActive: boolean;
         lastSyncAt: Date | null;
     }>;
     deleteConnection(id: string, req: Request): Promise<{
         id: string;
         householdId: string;
-        isActive: boolean;
         userId: string;
         createdAt: Date;
         updatedAt: Date;
         provider: string;
         emailAddress: string;
         appPassword: string;
+        isActive: boolean;
         lastSyncAt: Date | null;
     }>;
 }

@@ -17,8 +17,8 @@ export declare class InboxService {
             goalId: string | null;
         } | null;
         budgetStatus: string | null;
-        currency: string;
         id: string;
+        currency: string;
         status: string;
         bankConnectionId: string | null;
         recurringEventId: string | null;
@@ -35,8 +35,8 @@ export declare class InboxService {
         updatedAt: Date;
     }[]>;
     updateStatus(id: string, userId: string, status: 'PROCESSED' | 'DISMISSED'): Promise<{
-        currency: string;
         id: string;
+        currency: string;
         status: string;
         bankConnectionId: string | null;
         recurringEventId: string | null;
@@ -58,10 +58,10 @@ export declare class InboxService {
     }>;
     getConnections(userId: string): Promise<{
         id: string;
-        isActive: boolean;
         createdAt: Date;
         provider: string;
         emailAddress: string;
+        isActive: boolean;
         lastSyncAt: Date | null;
     }[]>;
     createConnection(userId: string, data: {
@@ -71,25 +71,25 @@ export declare class InboxService {
     }): Promise<{
         id: string;
         householdId: string;
-        isActive: boolean;
         userId: string;
         createdAt: Date;
         updatedAt: Date;
         provider: string;
         emailAddress: string;
         appPassword: string;
+        isActive: boolean;
         lastSyncAt: Date | null;
     }>;
     deleteConnection(userId: string, connectionId: string): Promise<{
         id: string;
         householdId: string;
-        isActive: boolean;
         userId: string;
         createdAt: Date;
         updatedAt: Date;
         provider: string;
         emailAddress: string;
         appPassword: string;
+        isActive: boolean;
         lastSyncAt: Date | null;
     }>;
 }

@@ -115,12 +115,14 @@ let BudgetsService = class BudgetsService {
                 currency: baseBudget?.currency || specificBudget?.currency || 'CRC'
             };
         });
-        return results.sort((a, b) => {
+        const sorted = results.sort((a, b) => {
             if (a.categoryName === b.categoryName) {
                 return a.itemName.localeCompare(b.itemName);
             }
             return a.categoryName.localeCompare(b.categoryName);
         });
+        console.log("GET BUDGET SUMMARY FOR", period, "->", sorted.filter((s) => s.consumed > 0 || s.consumed < 0));
+        return sorted;
     }
 };
 exports.BudgetsService = BudgetsService;

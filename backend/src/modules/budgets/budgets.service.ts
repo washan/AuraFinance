@@ -126,11 +126,13 @@ export class BudgetsService {
     });
 
     // Sort by category name then item name
-    return results.sort((a: any, b: any) => {
+    const sorted = results.sort((a: any, b: any) => {
       if (a.categoryName === b.categoryName) {
          return a.itemName.localeCompare(b.itemName);
       }
       return a.categoryName.localeCompare(b.categoryName);
     });
+    console.log("GET BUDGET SUMMARY FOR", period, "->", sorted.filter((s:any) => s.consumed > 0 || s.consumed < 0));
+    return sorted;
   }
 }

@@ -15,12 +15,12 @@ export declare class BudgetsController {
         currency: string;
     }[]>;
     upsertBudget(req: any, createBudgetDto: CreateBudgetDto): Promise<{
-        currency: string;
         id: string;
         householdId: string;
         itemId: string;
         limitAmount: import("@prisma/client/runtime/library").Decimal;
         isBase: boolean;
         period: string | null;
+        currency: string;
     }>;
 }
