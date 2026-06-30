@@ -345,7 +345,11 @@ export default function Dashboard() {
               )}
 
               {/* Investment History Chart */}
-              <InvestmentHistoryChart token={typeof window !== 'undefined' ? localStorage.getItem("token") || '' : ''} />
+              <InvestmentHistoryChart 
+                  token={typeof window !== 'undefined' ? localStorage.getItem("token") || '' : ''} 
+                  isColones={false} 
+                  exchangeRate={1} 
+              />
 
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
                 {/* Main Chart Area */}
