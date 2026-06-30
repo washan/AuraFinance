@@ -112,6 +112,22 @@ export default function InboxPage() {
         router.push(`/transactions?${queryParams}`);
     };
 
+    const getCardStyles = (tx: any) => {
+        if (tx.budgetStatus === 'EXCEEDED') return 'border-red-500/50 bg-red-500/10 hover:bg-red-500/20';
+        if (tx.budgetStatus === 'WARNING') return 'border-amber-500/50 bg-amber-500/10 hover:bg-amber-500/20';
+        if (tx.budgetStatus === 'OK') return 'border-emerald-500/50 bg-emerald-500/10 hover:bg-emerald-500/20';
+        // fallback
+        return tx.source === 'RECURRING' ? 'border-cyan-500/30 bg-black/40 hover:bg-white/5' : tx.matchedRule ? 'border-amber-500/30 bg-black/40 hover:bg-white/5' : 'border-white/10 bg-black/40 hover:bg-white/5';
+    };
+
+    const getHighlightStyles = (tx: any) => {
+        if (tx.budgetStatus === 'EXCEEDED') return 'from-red-400 to-red-600';
+        if (tx.budgetStatus === 'WARNING') return 'from-amber-400 to-orange-500';
+        if (tx.budgetStatus === 'OK') return 'from-emerald-400 to-emerald-600';
+        // fallback
+        return tx.source === 'RECURRING' ? 'from-cyan-400 to-blue-500' : tx.matchedRule ? 'from-amber-400 to-orange-500' : 'from-indigo-500 to-purple-500';
+    };
+
     return (
         <div className="flex h-screen bg-black text-white font-sans overflow-hidden">
             <Sidebar />
@@ -153,9 +169,9 @@ export default function InboxPage() {
                     ) : (
                         <div className="space-y-4">
                             {transactions.map(tx => (
-                                <div key={tx.id} className={`bg-black/40 border rounded-2xl p-4 md:p-6 hover:bg-white/5 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-0 group relative overflow-hidden ${tx.source === 'RECURRING' ? 'border-cyan-500/30' : tx.matchedRule ? 'border-amber-500/30' : 'border-white/10'}`}>
+                                <div key={tx.id} className={`border rounded-2xl p-4 md:p-6 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-0 group relative overflow-hidden ${getCardStyles(tx)}`}>
                                     {/* Left highlight */}
-                                    <div className={`absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b ${tx.source === 'RECURRING' ? 'from-cyan-400 to-blue-500' : tx.matchedRule ? 'from-amber-400 to-orange-500' : 'from-indigo-500 to-purple-500'}`}></div>
+                                    <div className={`absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b ${getHighlightStyles(tx)}`}></div>
 
                                     {/* Primary Info container */}
                                     <div className="flex items-start md:items-center gap-4 md:gap-6 flex-1 min-w-0 pr-2">
@@ -173,6 +189,21 @@ export default function InboxPage() {
                                                 {tx.matchedRule && (
                                                     <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/25 font-semibold flex items-center gap-1 shrink-0">
                                                         <Zap size={10} /> {tx.matchedRule.name}
+                                                    </span>
+                                                )}
+                                                {tx.budgetStatus === 'EXCEEDED' && (
+                                                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-500/20 text-red-200 border border-red-500/40 font-semibold flex items-center gap-1 shrink-0">
+                                                        ⚠️ Excede Presupuesto
+                                                    </span>
+                                                )}
+                                                {tx.budgetStatus === 'WARNING' && (
+                                                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-200 border border-amber-500/40 font-semibold flex items-center gap-1 shrink-0">
+                                                        ⚠️ Alerta Presupuesto
+                                                    </span>
+                                                )}
+                                                {tx.budgetStatus === 'OK' && (
+                                                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-200 border border-emerald-500/40 font-semibold flex items-center gap-1 shrink-0">
+                                                        ✅ Presupuesto Sano
                                                     </span>
                                                 )}
                                             </div>

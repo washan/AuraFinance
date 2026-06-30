@@ -40,6 +40,7 @@ export default function Dashboard() {
   const [recentTransactions, setRecentTransactions] = useState<any[]>([]);
   const [projects, setProjects] = useState<any[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState<string>("");
+  const [budgetWarnings, setBudgetWarnings] = useState<any[]>([]);
 
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
 
@@ -114,16 +115,15 @@ export default function Dashboard() {
       const qs = params.toString();
       const url = `${process.env.NEXT_PUBLIC_API_URL}/dashboard/summary${qs ? `?${qs}` : ""}`;
       const transactionsUrl = `${process.env.NEXT_PUBLIC_API_URL}/transactions?take=5${projectId ? `&projectId=${projectId}` : ""}`;
-      const [summaryRes, transactionsRes] = await Promise.all([
-        fetch(url, {
-          headers: { Authorization: `Bearer ${token}` }
-        }),
-        fetch(transactionsUrl, {
-          headers: { Authorization: `Bearer ${token}` }
-        })
+      const budgetsUrl = `${process.env.NEXT_PUBLIC_API_URL}/budgets?period=${month || getCurrentMonth()}`;
+
+      const [summaryRes, transactionsRes, budgetsRes] = await Promise.all([
+        fetch(url, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(transactionsUrl, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(budgetsUrl, { headers: { Authorization: `Bearer ${token}` } })
       ]);
 
-      if (summaryRes.status === 401 || transactionsRes.status === 401) {
+      if (summaryRes.status === 401 || transactionsRes.status === 401 || budgetsRes.status === 401) {
         localStorage.removeItem("token");
         localStorage.removeItem("user");
         router.push("/auth");
@@ -136,9 +136,11 @@ export default function Dashboard() {
 
       const summaryData = await summaryRes.json();
       const transactionsData = await transactionsRes.json();
+      const budgetsData = budgetsRes.ok ? await budgetsRes.json() : [];
 
       setMetrics(summaryData);
       setRecentTransactions(transactionsData);
+      setBudgetWarnings(budgetsData.filter((b: any) => b.status === 'EXCEEDED' || b.status === 'WARNING'));
     } catch (err: any) {
       setError(err.message || "Failed to load dashboard data");
     } finally {
@@ -280,6 +282,40 @@ export default function Dashboard() {
             <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-xl flex items-center gap-3 text-red-400">
               <AlertCircle size={20} className="shrink-0" />
               <p className="text-sm">{error}</p>
+            </div>
+          )}
+
+          {budgetWarnings.length > 0 && (
+            <div className="bg-gradient-to-r from-red-500/10 to-amber-500/10 border border-red-500/20 p-6 rounded-3xl relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/10 rounded-full blur-2xl -mx-10 -my-10 pointer-events-none"></div>
+              <div className="flex items-center gap-3 mb-4 relative z-10">
+                <AlertCircle className="text-red-400 shrink-0" size={24} />
+                <h2 className="text-lg font-medium text-white">Alerta de Presupuestos</h2>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 relative z-10">
+                {budgetWarnings.map((b: any) => (
+                  <div key={b.itemId} className="bg-black/40 p-4 rounded-xl border border-white/5 flex flex-col justify-between">
+                    <div className="flex justify-between items-start mb-2">
+                      <span className="font-medium text-sm text-gray-200">{b.itemName}</span>
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full border font-semibold ${b.status === 'EXCEEDED' ? 'bg-red-500/20 text-red-300 border-red-500/30' : 'bg-amber-500/20 text-amber-300 border-amber-500/30'}`}>
+                        {b.status === 'EXCEEDED' ? 'Excedido' : 'Precaución'}
+                      </span>
+                    </div>
+                    <div>
+                      <div className="flex justify-between text-xs text-gray-400 mb-1">
+                        <span>{formatCurrency(b.consumed, b.currency)}</span>
+                        <span>{formatCurrency(b.formulated, b.currency)}</span>
+                      </div>
+                      <div className="h-1.5 w-full bg-black/60 rounded-full overflow-hidden">
+                        <div 
+                          className={`h-full rounded-full transition-all duration-1000 ${b.status === 'EXCEEDED' ? 'bg-red-500' : 'bg-amber-400'}`}
+                          style={{ width: `${Math.min((b.consumed / Math.max(b.formulated, 1)) * 100, 100)}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 

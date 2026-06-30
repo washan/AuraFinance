@@ -115,7 +115,9 @@ export const InvestmentHistoryChart: React.FC<Props> = ({ token, isColones, exch
                     <h2 className="text-xl font-bold text-white">Análisis Mensual (12 Meses)</h2>
                     <p className="text-sm text-gray-400 flex items-center gap-1">
                         Aportes vs Ganancia/Pérdida por mes
-                        <Info size={14} className="text-gray-500 inline ml-1 cursor-help" title="Muestra cuánto dinero nuevo invertiste cada mes (barras) y cómo se comportó el mercado para tu portafolio en ese mismo mes (línea)" />
+                        <span title="Muestra cuánto dinero nuevo invertiste cada mes (barras) y cómo se comportó el mercado para tu portafolio en ese mismo mes (línea)">
+                            <Info size={14} className="text-gray-500 inline ml-1 cursor-help" />
+                        </span>
                     </p>
                 </div>
             </div>

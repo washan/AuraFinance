@@ -96,6 +96,7 @@ export function Sidebar() {
                     <NavItem icon={<Box size={20} />} label="Patrimonio" path="/assets" />
                     <NavItem icon={<TrendingUp size={20} />} label="Inversiones" path="/investments" />
                     <NavItem icon={<Bell size={20} />} label="Buzón" path="/inbox" />
+                    <NavItem icon={<Target size={20} />} label="Presupuestos" path="/budgets" />
                 </nav>
             </div>
 
