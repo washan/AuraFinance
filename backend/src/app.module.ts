@@ -20,8 +20,9 @@ import { PlannedTransactionsModule } from './modules/planned-transactions/planne
 import { AssetsModule } from './modules/assets/assets.module';
 import { InvestmentsModule } from './modules/investments/investments.module';
 import { WhatsAppModule } from './modules/whatsapp/whatsapp.module';
+import { BudgetsModule } from './modules/budgets/budgets.module';
 @Module({
-  imports: [UsersModule, AuthModule, PrismaModule, AccountsModule, TransactionsModule, CurrenciesModule, CategoriesModule, DashboardModule, ProjectsModule, GoalsModule, InboxModule, InboxRulesModule, RecurringEventsModule, ParametersModule, BackupModule, PlannedTransactionsModule, AssetsModule, InvestmentsModule, WhatsAppModule],
+  imports: [UsersModule, AuthModule, PrismaModule, AccountsModule, TransactionsModule, CurrenciesModule, CategoriesModule, DashboardModule, ProjectsModule, GoalsModule, InboxModule, InboxRulesModule, RecurringEventsModule, ParametersModule, BackupModule, PlannedTransactionsModule, AssetsModule, InvestmentsModule, WhatsAppModule, BudgetsModule],
   controllers: [AppController],
   providers: [AppService],
 })

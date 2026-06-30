@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -15,297 +9,299 @@ datasource db {
 }
 
 model Household {
-  id         String     @id @default(uuid()) @db.Uuid
-  name       String
-  users      User[]
-  accounts   Account[]
-  categories Category[]
-  budgets    Budget[]
-  goals      Goal[]
-  projects   Project[]
-  currencies Currency[]
+  id              String           @id @default(uuid()) @db.Uuid
+  name            String
+  accounts        Account[]
+  assets          Asset[]
   bankConnections BankConnection[]
-  inboxRules  InboxRule[]
+  budgets         Budget[]
+  categories      Category[]
+  currencies      Currency[]
+  goals           Goal[]
+  inboxRules      InboxRule[]
+  instruments     Instrument[]
+  projects        Project[]
   recurringEvents RecurringEvent[]
-  assets      Asset[]
-  instruments Instrument[]
+  users           User[]
 }
 
 model User {
-  id           String        @id @default(uuid()) @db.Uuid
-  householdId  String        @db.Uuid
-  household    Household     @relation(fields: [householdId], references: [id])
-  name         String
-  email        String        @unique
-  role         String        @default("MEMBER")
-  passwordHash String
-  isBlocked    Boolean       @default(false)
-  transactions Transaction[]
-  bankConnections BankConnection[]
-  parameters   Parameter[]
+  id                  String               @id @default(uuid()) @db.Uuid
+  householdId         String               @db.Uuid
+  name                String
+  email               String               @unique
+  role                String               @default("MEMBER")
+  passwordHash        String
+  isBlocked           Boolean              @default(false)
+  bankConnections     BankConnection[]
+  parameters          Parameter[]
   plannedTransactions PlannedTransaction[]
+  transactions        Transaction[]
+  household           Household            @relation(fields: [householdId], references: [id])
 }
 
 model Currency {
-  code          String         @id // e.g. USD, CRC
+  code          String         @id
   symbol        String         @default("$")
   householdId   String         @db.Uuid
-  household     Household      @relation(fields: [householdId], references: [id])
   isLocalBase   Boolean        @default(false)
   isActive      Boolean        @default(true)
-  exchangeRates ExchangeRate[]
   accounts      Account[]
+  household     Household      @relation(fields: [householdId], references: [id])
+  exchangeRates ExchangeRate[]
 }
 
 model ExchangeRate {
   id            String    @id @default(uuid()) @db.Uuid
   currencyCode  String
-  currency      Currency  @relation(fields: [currencyCode], references: [code])
   rate          Decimal   @db.Decimal(19, 4)
   effectiveFrom DateTime
   effectiveTo   DateTime?
+  currency      Currency  @relation(fields: [currencyCode], references: [code])
 }
 
 model Account {
-  id                   String        @id @default(uuid()) @db.Uuid
-  householdId          String        @db.Uuid
-  household            Household     @relation(fields: [householdId], references: [id])
-  name                 String
-  type                 String // bank, cash, credit, investment
-  currencyCode         String
-  currency             Currency      @relation(fields: [currencyCode], references: [code])
-  balance              Decimal       @default(0) @db.Decimal(19, 4)
-  transactions         Transaction[] @relation("SourceAccount")
-  destinationTransfers Transaction[] @relation("DestinationAccount")
-  inboxRules           InboxRule[]
-  plannedTransactions  PlannedTransaction[] @relation("PlannedSourceAccount")
+  id                     String                  @id @default(uuid()) @db.Uuid
+  householdId            String                  @db.Uuid
+  name                   String
+  type                   String
+  currencyCode           String
+  balance                Decimal                 @default(0) @db.Decimal(19, 4)
+  currency               Currency                @relation(fields: [currencyCode], references: [code])
+  household              Household               @relation(fields: [householdId], references: [id])
+  inboxRules             InboxRule[]
   investmentTransactions InvestmentTransaction[]
+  plannedTransactions    PlannedTransaction[]    @relation("PlannedSourceAccount")
+  transactions           Transaction[]           @relation("SourceAccount")
+  destinationTransfers   Transaction[]           @relation("DestinationAccount")
 }
 
 model Project {
-  id           String        @id @default(uuid()) @db.Uuid
-  householdId  String        @db.Uuid
-  household    Household     @relation(fields: [householdId], references: [id])
-  name         String
-  description  String?
-  transactions Transaction[]
-  inboxRules   InboxRule[]
+  id                  String               @id @default(uuid()) @db.Uuid
+  householdId         String               @db.Uuid
+  name                String
+  description         String?
+  inboxRules          InboxRule[]
   plannedTransactions PlannedTransaction[]
+  household           Household            @relation(fields: [householdId], references: [id])
+  transactions        Transaction[]
 }
 
 model Category {
   id          String    @id @default(uuid()) @db.Uuid
   householdId String    @db.Uuid
-  household   Household @relation(fields: [householdId], references: [id])
   name        String
-  type        String    @default("expense") // 'expense' or 'income'
+  type        String    @default("expense")
   icon        String?
+  household   Household @relation(fields: [householdId], references: [id])
   items       Item[]
-  budgets     Budget[]
 }
 
 model Item {
-  id           String        @id @default(uuid()) @db.Uuid
-  categoryId   String        @db.Uuid
-  category     Category      @relation(fields: [categoryId], references: [id])
-  name         String
-  transactions Transaction[]
-  inboxRules   InboxRule[]
+  id                  String               @id @default(uuid()) @db.Uuid
+  categoryId          String               @db.Uuid
+  name                String
+  inboxRules          InboxRule[]
+  category            Category             @relation(fields: [categoryId], references: [id])
   plannedTransactions PlannedTransaction[]
+  transactions        Transaction[]
+  budgets             Budget[]
 }
 
 model Transaction {
   id                   String   @id @default(uuid()) @db.Uuid
   userId               String   @db.Uuid
-  user                 User     @relation(fields: [userId], references: [id])
   accountId            String   @db.Uuid
-  account              Account  @relation("SourceAccount", fields: [accountId], references: [id])
   destinationAccountId String?  @db.Uuid
-  destinationAccount   Account? @relation("DestinationAccount", fields: [destinationAccountId], references: [id])
-  payeeId              String?  @db.Uuid // Optional, for future use or explicit Payee table if needed
+  payeeId              String?  @db.Uuid
   itemId               String?  @db.Uuid
-  item                 Item?    @relation(fields: [itemId], references: [id])
   projectId            String?  @db.Uuid
-  project              Project? @relation(fields: [projectId], references: [id])
   goalId               String?  @db.Uuid
-  goal                 Goal?    @relation(fields: [goalId], references: [id])
-  type                 String   @default("expense") // 'expense', 'income', 'transfer'
+  type                 String   @default("expense")
   amountOriginal       Decimal  @db.Decimal(19, 4)
   currencyOriginal     String
   exchangeRate         Decimal  @db.Decimal(19, 4)
   amountBase           Decimal  @db.Decimal(19, 4)
   transactionDate      DateTime
-  status               String   @default("PENDING") // PENDING, CLASSIFIED, RECONCILED
-  notes                String?  @db.Text
+  status               String   @default("PENDING")
+  notes                String?
+  account              Account  @relation("SourceAccount", fields: [accountId], references: [id])
+  destinationAccount   Account? @relation("DestinationAccount", fields: [destinationAccountId], references: [id])
+  goal                 Goal?    @relation(fields: [goalId], references: [id])
+  item                 Item?    @relation(fields: [itemId], references: [id])
+  project              Project? @relation(fields: [projectId], references: [id])
+  user                 User     @relation(fields: [userId], references: [id])
 }
 
 model Budget {
   id          String    @id @default(uuid()) @db.Uuid
   householdId String    @db.Uuid
-  household   Household @relation(fields: [householdId], references: [id])
-  categoryId  String    @db.Uuid
-  category    Category  @relation(fields: [categoryId], references: [id])
+  itemId      String    @db.Uuid
   limitAmount Decimal   @db.Decimal(19, 4)
-  period      String // MM-YYYY
+  isBase      Boolean   @default(false)
+  period      String?
+  currency    String    @default("CRC")
+  item        Item      @relation(fields: [itemId], references: [id])
+  household   Household @relation(fields: [householdId], references: [id])
 }
 
 model Goal {
-  id           String        @id @default(uuid()) @db.Uuid
-  householdId  String        @db.Uuid
-  household    Household     @relation(fields: [householdId], references: [id])
-  title        String
-  description  String?       @db.Text
-  type         String        @default("savings") // 'savings' or 'expense'
-  targetAmount Decimal?      @db.Decimal(19, 4)
-  targetDate   DateTime?
-  status       String        @default("IN_PROGRESS") // IN_PROGRESS, COMPLETED
-  tasks        GoalTask[]
-  transactions Transaction[]
-  inboxRules   InboxRule[]
+  id                  String               @id @default(uuid()) @db.Uuid
+  householdId         String               @db.Uuid
+  title               String
+  description         String?
+  type                String               @default("savings")
+  targetAmount        Decimal?             @db.Decimal(19, 4)
+  targetDate          DateTime?
+  status              String               @default("IN_PROGRESS")
+  household           Household            @relation(fields: [householdId], references: [id])
+  tasks               GoalTask[]
+  inboxRules          InboxRule[]
   plannedTransactions PlannedTransaction[]
+  transactions        Transaction[]
 }
 
 model GoalTask {
   id          String  @id @default(uuid()) @db.Uuid
   goalId      String  @db.Uuid
-  goal        Goal    @relation(fields: [goalId], references: [id])
   description String
   isCompleted Boolean @default(false)
+  goal        Goal    @relation(fields: [goalId], references: [id])
 }
 
 model InboxRule {
-  id          String   @id @default(uuid()) @db.Uuid
-  householdId String   @db.Uuid
-  household   Household @relation(fields: [householdId], references: [id])
+  id          String    @id @default(uuid()) @db.Uuid
+  householdId String    @db.Uuid
   name        String
   matchValue  String
-  matchType   String   @default("contains")
-  accountId   String?  @db.Uuid
-  account     Account? @relation(fields: [accountId], references: [id])
-  itemId      String?  @db.Uuid
-  item        Item?    @relation(fields: [itemId], references: [id])
-  projectId   String?  @db.Uuid
-  project     Project? @relation(fields: [projectId], references: [id])
-  goalId      String?  @db.Uuid
-  goal        Goal?    @relation(fields: [goalId], references: [id])
-  createdAt   DateTime @default(now())
+  matchType   String    @default("contains")
+  accountId   String?   @db.Uuid
+  itemId      String?   @db.Uuid
+  projectId   String?   @db.Uuid
+  goalId      String?   @db.Uuid
+  createdAt   DateTime  @default(now())
+  account     Account?  @relation(fields: [accountId], references: [id])
+  goal        Goal?     @relation(fields: [goalId], references: [id])
+  household   Household @relation(fields: [householdId], references: [id])
+  item        Item?     @relation(fields: [itemId], references: [id])
+  project     Project?  @relation(fields: [projectId], references: [id])
 }
 
 model BankConnection {
-  id           String    @id @default(uuid()) @db.Uuid
-  householdId  String    @db.Uuid
-  household    Household @relation(fields: [householdId], references: [id])
-  userId       String    @db.Uuid
-  user         User      @relation(fields: [userId], references: [id])
-  provider     String    @default("GMAIL") // GMAIL, OUTLOOK, etc.
-  emailAddress String
-  appPassword  String    // Contraseña de aplicación encriptada
-  isActive     Boolean   @default(true)
-  lastSyncAt   DateTime?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  id                String             @id @default(uuid()) @db.Uuid
+  householdId       String             @db.Uuid
+  userId            String             @db.Uuid
+  provider          String             @default("GMAIL")
+  emailAddress      String
+  appPassword       String
+  isActive          Boolean            @default(true)
+  lastSyncAt        DateTime?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  household         Household          @relation(fields: [householdId], references: [id])
+  user              User               @relation(fields: [userId], references: [id])
   inboxTransactions InboxTransaction[]
 }
 
 model InboxTransaction {
   id               String          @id @default(uuid()) @db.Uuid
   bankConnectionId String?         @db.Uuid
-  bankConnection   BankConnection? @relation(fields: [bankConnectionId], references: [id])
   recurringEventId String?         @db.Uuid
-  recurringEvent   RecurringEvent? @relation(fields: [recurringEventId], references: [id])
-  source           String          @default("EMAIL") // EMAIL, RECURRING
-  sourceId         String?         // Message ID del correo para no duplicar
+  source           String          @default("EMAIL")
+  sourceId         String?
   date             DateTime
   merchant         String
   amount           Decimal         @db.Decimal(19, 4)
-  currency         String          // CRC, USD
-  accountInfo      String?         // ej. MASTER ***5028
-  transactionType  String?         // COMPRA, RETIRO, etc.
-  status           String          @default("PENDING") // PENDING, PROCESSED, DISMISSED
-  rawContent       String?         @db.Text // Parte del HTML para logging si falla
-  transactionId    String?         @db.Uuid // ID de la transacción final una vez procesada
+  currency         String
+  accountInfo      String?
+  transactionType  String?
+  status           String          @default("PENDING")
+  rawContent       String?
+  transactionId    String?         @db.Uuid
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
+  bankConnection   BankConnection? @relation(fields: [bankConnectionId], references: [id])
+  recurringEvent   RecurringEvent? @relation(fields: [recurringEventId], references: [id])
 }
 
 model RecurringEvent {
-  id              String    @id @default(uuid()) @db.Uuid
-  householdId     String    @db.Uuid
-  household       Household @relation(fields: [householdId], references: [id])
-  name            String
-  merchant        String
-  amount          Decimal   @db.Decimal(19, 4)
-  currency        String    @default("CRC")
-  frequency       String    @default("monthly") // monthly, biweekly, weekly, annually
-  dayOfMonth      Int?      // 1-31 for monthly/biweekly/annually
-  dayOfMonth2     Int?      // 1-31 second day for biweekly (e.g. 15 if dayOfMonth=1)
-  dayOfWeek       Int?      // 0=Sun, 1=Mon...6=Sat for weekly
-  monthOfYear     Int?      // 1-12 for annually
-  accountInfo     String?   // ej. "****1234"
-  isActive        Boolean   @default(true)
-  lastGeneratedAt DateTime?
-  createdAt       DateTime  @default(now())
+  id                String             @id @default(uuid()) @db.Uuid
+  householdId       String             @db.Uuid
+  name              String
+  merchant          String
+  amount            Decimal            @db.Decimal(19, 4)
+  currency          String             @default("CRC")
+  frequency         String             @default("monthly")
+  dayOfMonth        Int?
+  dayOfMonth2       Int?
+  dayOfWeek         Int?
+  monthOfYear       Int?
+  accountInfo       String?
+  isActive          Boolean            @default(true)
+  lastGeneratedAt   DateTime?
+  createdAt         DateTime           @default(now())
   inboxTransactions InboxTransaction[]
+  household         Household          @relation(fields: [householdId], references: [id])
 }
 
 model Parameter {
   code        String
-  userId      String    @db.Uuid
-  user        User      @relation(fields: [userId], references: [id])
+  userId      String   @db.Uuid
   description String?
   value       String
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id])
 
   @@id([code, userId])
 }
 
 model PlannedTransaction {
-  id                   String   @id @default(uuid()) @db.Uuid
-  userId               String   @db.Uuid
-  user                 User     @relation(fields: [userId], references: [id])
-  accountId            String?  @db.Uuid
-  account              Account? @relation("PlannedSourceAccount", fields: [accountId], references: [id])
-  itemId               String?  @db.Uuid
-  item                 Item?    @relation(fields: [itemId], references: [id])
-  projectId            String?  @db.Uuid
-  project              Project? @relation(fields: [projectId], references: [id])
-  goalId               String?  @db.Uuid
-  goal                 Goal?    @relation(fields: [goalId], references: [id])
-  type                 String   @default("expense") // 'expense', 'income'
-  amount               Decimal  @db.Decimal(19, 4)
-  currency             String
-  plannedDate          DateTime
-  status               String   @default("PENDING") // PENDING, COMPLETED, CANCELLED
-  notes                String?  @db.Text
-  transactionId        String?  @db.Uuid // ID de la transacción real vinculada
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
+  id            String   @id @default(uuid()) @db.Uuid
+  userId        String   @db.Uuid
+  accountId     String?  @db.Uuid
+  itemId        String?  @db.Uuid
+  projectId     String?  @db.Uuid
+  goalId        String?  @db.Uuid
+  type          String   @default("expense")
+  amount        Decimal  @db.Decimal(19, 4)
+  currency      String
+  plannedDate   DateTime
+  status        String   @default("PENDING")
+  notes         String?
+  transactionId String?  @db.Uuid
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  account       Account? @relation("PlannedSourceAccount", fields: [accountId], references: [id])
+  goal          Goal?    @relation(fields: [goalId], references: [id])
+  item          Item?    @relation(fields: [itemId], references: [id])
+  project       Project? @relation(fields: [projectId], references: [id])
+  user          User     @relation(fields: [userId], references: [id])
 }
 
 model Asset {
-  id           String    @id @default(uuid()) @db.Uuid
-  householdId  String    @db.Uuid
-  household    Household @relation(fields: [householdId], references: [id])
-  name         String
-  category     String?
-  quantity     Decimal   @default(1) @db.Decimal(19, 4)
-  unitPrice    Decimal   @db.Decimal(19, 4)
-  currency     String    @default("CRC")
-  notes        String?   @db.Text
-  isActive     Boolean   @default(true)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  id          String    @id @default(uuid()) @db.Uuid
+  householdId String    @db.Uuid
+  name        String
+  category    String?
+  quantity    Decimal   @default(1) @db.Decimal(19, 4)
+  unitPrice   Decimal   @db.Decimal(19, 4)
+  currency    String    @default("CRC")
+  notes       String?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  household   Household @relation(fields: [householdId], references: [id])
 }
 
 model Instrument {
-  id           String    @id @default(uuid()) @db.Uuid
-  householdId  String    @db.Uuid
-  household    Household @relation(fields: [householdId], references: [id])
-  symbol       String    // e.g. VUAA.L
+  id           String                  @id @default(uuid()) @db.Uuid
+  householdId  String                  @db.Uuid
+  symbol       String
   name         String
-  currency     String    @default("USD")
-  type         String    @default("stock") // stock, etf, crypto
+  currency     String                  @default("USD")
+  type         String                  @default("stock")
+  household    Household               @relation(fields: [householdId], references: [id])
   transactions InvestmentTransaction[]
 
   @@unique([householdId, symbol])
@@ -314,21 +310,93 @@ model Instrument {
 model InvestmentTransaction {
   id           String     @id @default(uuid()) @db.Uuid
   accountId    String     @db.Uuid
-  account      Account    @relation(fields: [accountId], references: [id])
   instrumentId String     @db.Uuid
-  instrument   Instrument @relation(fields: [instrumentId], references: [id])
-  type         String     // BUY, SELL, DIVIDEND
+  type         String
   quantity     Decimal    @db.Decimal(19, 6)
-  price        Decimal    @db.Decimal(19, 4) // Price per share at transaction time
+  price        Decimal    @db.Decimal(19, 4)
   commission   Decimal    @default(0) @db.Decimal(19, 4)
   currency     String     @default("USD")
   date         DateTime
-  notes        String?    @db.Text
+  notes        String?
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
+  account      Account    @relation(fields: [accountId], references: [id])
+  instrument   Instrument @relation(fields: [instrumentId], references: [id])
 }
 
 model WhatsAppSession {
-  key   String   @id
-  data  String   @db.Text
+  key  String @id
+  data String
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model EtfAlertState {
+  id                  Int       @id @default(autoincrement())
+  symbol              String
+  date                DateTime  @db.Date
+  last_up_threshold   Int       @default(0)
+  last_down_threshold Int       @default(0)
+  prev_close          Decimal?  @db.Decimal(14, 4)
+  last_checked_at     DateTime? @db.Timestamptz(6)
+
+  @@unique([symbol, date])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model notifications {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title      String
+  content    String?
+  type       String    @default("info")
+  product_id String?   @db.Uuid
+  is_active  Boolean   @default(true)
+  created_at DateTime  @default(now()) @db.Timestamptz(6)
+  products   products? @relation(fields: [product_id], references: [id], onUpdate: NoAction)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model orders {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  items      Json     @default("[]")
+  total      Decimal  @default(0) @db.Decimal(10, 2)
+  status     String   @default("sent_whatsapp")
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model products {
+  id                    String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                  String
+  description           String?
+  category              String          @default("general")
+  price                 Decimal         @default(0) @db.Decimal(10, 2)
+  stock                 Int             @default(0)
+  unit                  String          @default("unidad")
+  image_url             String?
+  is_active             Boolean         @default(true)
+  expected_restock_date DateTime?       @db.Date
+  slug                  String?         @unique
+  created_at            DateTime        @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime        @default(now()) @db.Timestamptz(6)
+  notifications         notifications[]
+  waitlist              waitlist[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model settings {
+  key        String   @id
+  value      String?
+  label      String?
+  updated_at DateTime @default(now()) @db.Timestamptz(6)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model waitlist {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  product_id String   @db.Uuid
+  phone      String
+  name       String?
+  notified   Boolean  @default(false)
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  products   products @relation(fields: [product_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }

@@ -2,13 +2,16 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ImapService } from './services/imap.service';
 import { InboxRulesService } from '../inbox-rules/inbox-rules.service';
+import { BudgetsService } from '../budgets/budgets.service';
+import { format } from 'date-fns';
 
 @Injectable()
 export class InboxService {
     constructor(
         private prisma: PrismaService,
         private imapService: ImapService,
-        private inboxRulesService: InboxRulesService
+        private inboxRulesService: InboxRulesService,
+        private budgetsService: BudgetsService
     ) { }
 
     async getPendingTransactions(userId: string) {
@@ -31,11 +34,30 @@ export class InboxService {
             orderBy: { date: 'desc' }
         });
 
-        // Enrich each transaction with matched rule
+        const currentPeriod = format(new Date(), 'MM-yyyy');
+        const budgetSummary = await this.budgetsService.getBudgetSummary(user.householdId, currentPeriod);
+
+        // Enrich each transaction with matched rule and budget status
         const enriched = await Promise.all(
             transactions.map(async (tx) => {
                 const matchedRule = await this.inboxRulesService.applyRules(user.householdId, tx.merchant);
-                return { ...tx, matchedRule };
+                let budgetStatus = null;
+                
+                if (matchedRule && matchedRule.itemId) {
+                    const budget = budgetSummary.find((b: any) => b.itemId === matchedRule.itemId);
+                    if (budget && budget.formulated > 0) {
+                        const newTotal = budget.consumed + Number(tx.amount);
+                        if (newTotal > budget.formulated) {
+                            budgetStatus = 'EXCEEDED';
+                        } else if (newTotal > budget.formulated * 0.8) {
+                            budgetStatus = 'WARNING';
+                        } else {
+                            budgetStatus = 'OK';
+                        }
+                    }
+                }
+
+                return { ...tx, matchedRule, budgetStatus };
             })
         );
 
