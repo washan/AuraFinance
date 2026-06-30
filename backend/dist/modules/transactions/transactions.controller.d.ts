@@ -4,136 +4,136 @@ export declare class TransactionsController {
     constructor(transactionsService: TransactionsService);
     create(req: any, body: any): Promise<{
         account: {
-            name: string;
             id: string;
-            householdId: string;
             type: string;
+            householdId: string;
+            name: string;
             currencyCode: string;
             balance: import("@prisma/client/runtime/library").Decimal;
         };
-        item: ({
-            category: {
-                name: string;
-                id: string;
-                householdId: string;
-                type: string;
-                icon: string | null;
-            };
-        } & {
-            name: string;
+        destinationAccount: {
             id: string;
-            categoryId: string;
-        }) | null;
+            type: string;
+            householdId: string;
+            name: string;
+            currencyCode: string;
+            balance: import("@prisma/client/runtime/library").Decimal;
+        } | null;
         goal: {
             id: string;
-            householdId: string;
             type: string;
             status: string;
+            householdId: string;
             title: string;
             description: string | null;
             targetAmount: import("@prisma/client/runtime/library").Decimal | null;
             targetDate: Date | null;
         } | null;
-        destinationAccount: {
-            name: string;
+        item: ({
+            category: {
+                id: string;
+                type: string;
+                householdId: string;
+                name: string;
+                icon: string | null;
+            };
+        } & {
             id: string;
-            householdId: string;
-            type: string;
-            currencyCode: string;
-            balance: import("@prisma/client/runtime/library").Decimal;
-        } | null;
+            name: string;
+            categoryId: string;
+        }) | null;
     } & {
-        exchangeRate: import("@prisma/client/runtime/library").Decimal;
         id: string;
-        type: string;
-        accountId: string;
         userId: string;
+        accountId: string;
         destinationAccountId: string | null;
         payeeId: string | null;
         itemId: string | null;
         projectId: string | null;
         goalId: string | null;
+        type: string;
         amountOriginal: import("@prisma/client/runtime/library").Decimal;
         currencyOriginal: string;
+        exchangeRate: import("@prisma/client/runtime/library").Decimal;
         amountBase: import("@prisma/client/runtime/library").Decimal;
         transactionDate: Date;
         status: string;
         notes: string | null;
     }>;
-    findAll(req: any, accountId?: string, projectId?: string, month?: string, take?: string, skip?: string): Promise<({
+    findAll(req: any, accountId?: string, projectId?: string, month?: string, goalId?: string, itemId?: string, take?: string, skip?: string): Promise<({
         account: {
-            name: string;
             id: string;
+            name: string;
             currencyCode: string;
         };
-        item: {
-            category: {
-                name: string;
-                id: string;
-                icon: string | null;
-            };
-            name: string;
+        destinationAccount: {
             id: string;
-            categoryId: string;
+            name: string;
+            currencyCode: string;
         } | null;
         goal: {
             id: string;
             title: string;
         } | null;
-        destinationAccount: {
-            name: string;
+        item: {
             id: string;
-            currencyCode: string;
+            name: string;
+            categoryId: string;
+            category: {
+                id: string;
+                name: string;
+                icon: string | null;
+            };
         } | null;
     } & {
-        exchangeRate: import("@prisma/client/runtime/library").Decimal;
         id: string;
-        type: string;
-        accountId: string;
         userId: string;
+        accountId: string;
         destinationAccountId: string | null;
         payeeId: string | null;
         itemId: string | null;
         projectId: string | null;
         goalId: string | null;
+        type: string;
         amountOriginal: import("@prisma/client/runtime/library").Decimal;
         currencyOriginal: string;
+        exchangeRate: import("@prisma/client/runtime/library").Decimal;
         amountBase: import("@prisma/client/runtime/library").Decimal;
         transactionDate: Date;
         status: string;
         notes: string | null;
     })[]>;
     update(req: any, id: string, body: any): Promise<{
-        exchangeRate: import("@prisma/client/runtime/library").Decimal;
         id: string;
-        type: string;
-        accountId: string;
         userId: string;
+        accountId: string;
         destinationAccountId: string | null;
         payeeId: string | null;
         itemId: string | null;
         projectId: string | null;
         goalId: string | null;
+        type: string;
         amountOriginal: import("@prisma/client/runtime/library").Decimal;
         currencyOriginal: string;
+        exchangeRate: import("@prisma/client/runtime/library").Decimal;
         amountBase: import("@prisma/client/runtime/library").Decimal;
         transactionDate: Date;
         status: string;
         notes: string | null;
     }>;
     remove(req: any, id: string): Promise<{
-        exchangeRate: import("@prisma/client/runtime/library").Decimal;
         id: string;
-        type: string;
-        accountId: string;
         userId: string;
+        accountId: string;
         destinationAccountId: string | null;
         payeeId: string | null;
         itemId: string | null;
         projectId: string | null;
         goalId: string | null;
+        type: string;
         amountOriginal: import("@prisma/client/runtime/library").Decimal;
         currencyOriginal: string;
+        exchangeRate: import("@prisma/client/runtime/library").Decimal;
         amountBase: import("@prisma/client/runtime/library").Decimal;
         transactionDate: Date;
         status: string;

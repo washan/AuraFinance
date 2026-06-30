@@ -3,36 +3,36 @@ export declare class PlannedTransactionsController {
     private readonly plannedTransactionsService;
     constructor(plannedTransactionsService: PlannedTransactionsService);
     create(req: any, body: any): Promise<{
-        project: {
-            name: string;
-            id: string;
-            householdId: string;
-            description: string | null;
-        } | null;
         item: ({
             category: {
-                name: string;
                 id: string;
-                householdId: string;
                 type: string;
+                householdId: string;
+                name: string;
                 icon: string | null;
             };
         } & {
-            name: string;
             id: string;
+            name: string;
             categoryId: string;
         }) | null;
+        project: {
+            id: string;
+            householdId: string;
+            name: string;
+            description: string | null;
+        } | null;
     } & {
-        currency: string;
         id: string;
-        type: string;
-        accountId: string | null;
         userId: string;
+        accountId: string | null;
         itemId: string | null;
         projectId: string | null;
         goalId: string | null;
+        type: string;
         status: string;
         notes: string | null;
+        currency: string;
         amount: import("@prisma/client/runtime/library").Decimal;
         transactionId: string | null;
         createdAt: Date;
@@ -41,39 +41,39 @@ export declare class PlannedTransactionsController {
     }>;
     findAll(req: any, month?: string, status?: string): Promise<({
         account: {
-            name: string;
             id: string;
+            name: string;
             currencyCode: string;
-        } | null;
-        project: {
-            name: string;
-            id: string;
-        } | null;
-        item: {
-            category: {
-                name: string;
-                id: string;
-                icon: string | null;
-            };
-            name: string;
-            id: string;
-            categoryId: string;
         } | null;
         goal: {
             id: string;
             title: string;
         } | null;
+        item: {
+            id: string;
+            name: string;
+            categoryId: string;
+            category: {
+                id: string;
+                name: string;
+                icon: string | null;
+            };
+        } | null;
+        project: {
+            id: string;
+            name: string;
+        } | null;
     } & {
-        currency: string;
         id: string;
-        type: string;
-        accountId: string | null;
         userId: string;
+        accountId: string | null;
         itemId: string | null;
         projectId: string | null;
         goalId: string | null;
+        type: string;
         status: string;
         notes: string | null;
+        currency: string;
         amount: import("@prisma/client/runtime/library").Decimal;
         transactionId: string | null;
         createdAt: Date;
@@ -81,36 +81,36 @@ export declare class PlannedTransactionsController {
         plannedDate: Date;
     })[]>;
     update(req: any, id: string, body: any): Promise<{
-        project: {
-            name: string;
-            id: string;
-            householdId: string;
-            description: string | null;
-        } | null;
         item: ({
             category: {
-                name: string;
                 id: string;
-                householdId: string;
                 type: string;
+                householdId: string;
+                name: string;
                 icon: string | null;
             };
         } & {
-            name: string;
             id: string;
+            name: string;
             categoryId: string;
         }) | null;
+        project: {
+            id: string;
+            householdId: string;
+            name: string;
+            description: string | null;
+        } | null;
     } & {
-        currency: string;
         id: string;
-        type: string;
-        accountId: string | null;
         userId: string;
+        accountId: string | null;
         itemId: string | null;
         projectId: string | null;
         goalId: string | null;
+        type: string;
         status: string;
         notes: string | null;
+        currency: string;
         amount: import("@prisma/client/runtime/library").Decimal;
         transactionId: string | null;
         createdAt: Date;
@@ -118,16 +118,16 @@ export declare class PlannedTransactionsController {
         plannedDate: Date;
     }>;
     remove(req: any, id: string): Promise<{
-        currency: string;
         id: string;
-        type: string;
-        accountId: string | null;
         userId: string;
+        accountId: string | null;
         itemId: string | null;
         projectId: string | null;
         goalId: string | null;
+        type: string;
         status: string;
         notes: string | null;
+        currency: string;
         amount: import("@prisma/client/runtime/library").Decimal;
         transactionId: string | null;
         createdAt: Date;
@@ -136,16 +136,16 @@ export declare class PlannedTransactionsController {
     }>;
     realize(req: any, id: string, body: any): Promise<{
         plannedTransaction: {
-            currency: string;
             id: string;
-            type: string;
-            accountId: string | null;
             userId: string;
+            accountId: string | null;
             itemId: string | null;
             projectId: string | null;
             goalId: string | null;
+            type: string;
             status: string;
             notes: string | null;
+            currency: string;
             amount: import("@prisma/client/runtime/library").Decimal;
             transactionId: string | null;
             createdAt: Date;
@@ -154,57 +154,57 @@ export declare class PlannedTransactionsController {
         };
         transaction: {
             account: {
-                name: string;
                 id: string;
-                householdId: string;
                 type: string;
+                householdId: string;
+                name: string;
                 currencyCode: string;
                 balance: import("@prisma/client/runtime/library").Decimal;
             };
-            item: ({
-                category: {
-                    name: string;
-                    id: string;
-                    householdId: string;
-                    type: string;
-                    icon: string | null;
-                };
-            } & {
-                name: string;
+            destinationAccount: {
                 id: string;
-                categoryId: string;
-            }) | null;
+                type: string;
+                householdId: string;
+                name: string;
+                currencyCode: string;
+                balance: import("@prisma/client/runtime/library").Decimal;
+            } | null;
             goal: {
                 id: string;
-                householdId: string;
                 type: string;
                 status: string;
+                householdId: string;
                 title: string;
                 description: string | null;
                 targetAmount: import("@prisma/client/runtime/library").Decimal | null;
                 targetDate: Date | null;
             } | null;
-            destinationAccount: {
-                name: string;
+            item: ({
+                category: {
+                    id: string;
+                    type: string;
+                    householdId: string;
+                    name: string;
+                    icon: string | null;
+                };
+            } & {
                 id: string;
-                householdId: string;
-                type: string;
-                currencyCode: string;
-                balance: import("@prisma/client/runtime/library").Decimal;
-            } | null;
+                name: string;
+                categoryId: string;
+            }) | null;
         } & {
-            exchangeRate: import("@prisma/client/runtime/library").Decimal;
             id: string;
-            type: string;
-            accountId: string;
             userId: string;
+            accountId: string;
             destinationAccountId: string | null;
             payeeId: string | null;
             itemId: string | null;
             projectId: string | null;
             goalId: string | null;
+            type: string;
             amountOriginal: import("@prisma/client/runtime/library").Decimal;
             currencyOriginal: string;
+            exchangeRate: import("@prisma/client/runtime/library").Decimal;
             amountBase: import("@prisma/client/runtime/library").Decimal;
             transactionDate: Date;
             status: string;

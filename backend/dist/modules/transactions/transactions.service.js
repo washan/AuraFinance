@@ -17,7 +17,7 @@ let TransactionsService = class TransactionsService {
     constructor(prisma) {
         this.prisma = prisma;
     }
-    async findAll(householdId, accountId, projectId, month, take = 50, skip = 0) {
+    async findAll(householdId, accountId, projectId, month, goalId, itemId, take = 50, skip = 0) {
         const whereClause = {
             user: { householdId }
         };
@@ -30,7 +30,13 @@ let TransactionsService = class TransactionsService {
         else if (projectId) {
             whereClause.projectId = projectId;
         }
-        if (month && /^\d{4}-\d{2}$/.test(month)) {
+        if (goalId) {
+            whereClause.goalId = goalId;
+        }
+        if (itemId) {
+            whereClause.itemId = itemId;
+        }
+        if (month && month !== 'all' && /^\d{4}-\d{2}$/.test(month)) {
             const [y, m] = month.split('-').map(Number);
             const refMonth = m - 1;
             const mStart = new Date(Date.UTC(y, refMonth, 1, 0, 0, 0, 0));

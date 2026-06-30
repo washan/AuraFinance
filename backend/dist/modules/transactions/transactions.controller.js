@@ -65,8 +65,8 @@ let TransactionsController = class TransactionsController {
             throw new common_1.HttpException(error.message || 'Internal server error', common_1.HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-    findAll(req, accountId, projectId, month, take, skip) {
-        return this.transactionsService.findAll(req.user.householdId, accountId, projectId, month, take ? parseInt(take) : (month ? 500 : 50), skip ? parseInt(skip) : 0);
+    findAll(req, accountId, projectId, month, goalId, itemId, take, skip) {
+        return this.transactionsService.findAll(req.user.householdId, accountId, projectId, month, goalId, itemId, take ? parseInt(take) : (month ? 500 : 50), skip ? parseInt(skip) : 0);
     }
     async update(req, id, body) {
         try {
@@ -102,10 +102,12 @@ __decorate([
     __param(1, (0, common_1.Query)('accountId')),
     __param(2, (0, common_1.Query)('projectId')),
     __param(3, (0, common_1.Query)('month')),
-    __param(4, (0, common_1.Query)('take')),
-    __param(5, (0, common_1.Query)('skip')),
+    __param(4, (0, common_1.Query)('goalId')),
+    __param(5, (0, common_1.Query)('itemId')),
+    __param(6, (0, common_1.Query)('take')),
+    __param(7, (0, common_1.Query)('skip')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, String, String, String, String, String]),
+    __metadata("design:paramtypes", [Object, String, String, String, String, String, String, String]),
     __metadata("design:returntype", void 0)
 ], TransactionsController.prototype, "findAll", null);
 __decorate([
