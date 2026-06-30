@@ -140,7 +140,7 @@ export default function Dashboard() {
 
       setMetrics(summaryData);
       setRecentTransactions(transactionsData);
-      setBudgetWarnings(budgetsData.filter((b: any) => b.status === 'EXCEEDED' || b.status === 'WARNING'));
+      setBudgetWarnings(budgetsData.filter((b: any) => b.consumed > 0));
     } catch (err: any) {
       setError(err.message || "Failed to load dashboard data");
     } finally {
@@ -286,19 +286,19 @@ export default function Dashboard() {
           )}
 
           {budgetWarnings.length > 0 && (
-            <div className="bg-gradient-to-r from-red-500/10 to-amber-500/10 border border-red-500/20 p-6 rounded-3xl relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/10 rounded-full blur-2xl -mx-10 -my-10 pointer-events-none"></div>
+            <div className="bg-gradient-to-r from-purple-500/10 to-indigo-500/10 border border-indigo-500/20 p-6 rounded-3xl relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full blur-2xl -mx-10 -my-10 pointer-events-none"></div>
               <div className="flex items-center gap-3 mb-4 relative z-10">
-                <AlertCircle className="text-red-400 shrink-0" size={24} />
-                <h2 className="text-lg font-medium text-white">Alerta de Presupuestos</h2>
+                <Target className="text-purple-400 shrink-0" size={24} />
+                <h2 className="text-lg font-medium text-white">Resumen de Presupuestos</h2>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 relative z-10">
                 {budgetWarnings.map((b: any) => (
-                  <div key={b.itemId} className="bg-black/40 p-4 rounded-xl border border-white/5 flex flex-col justify-between">
+                  <div key={b.itemId} className="bg-black/40 p-4 rounded-xl border border-white/5 flex flex-col justify-between hover:bg-white/[0.02] transition-colors">
                     <div className="flex justify-between items-start mb-2">
                       <span className="font-medium text-sm text-gray-200">{b.itemName}</span>
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full border font-semibold ${b.status === 'EXCEEDED' ? 'bg-red-500/20 text-red-300 border-red-500/30' : 'bg-amber-500/20 text-amber-300 border-amber-500/30'}`}>
-                        {b.status === 'EXCEEDED' ? 'Excedido' : 'Precaución'}
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full border font-semibold ${b.status === 'EXCEEDED' ? 'bg-red-500/20 text-red-300 border-red-500/30' : b.status === 'WARNING' ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'}`}>
+                        {b.status === 'EXCEEDED' ? 'Excedido' : b.status === 'WARNING' ? 'Precaución' : 'Sano'}
                       </span>
                     </div>
                     <div>
@@ -306,9 +306,9 @@ export default function Dashboard() {
                         <span>{formatCurrency(b.consumed, b.currency)}</span>
                         <span>{formatCurrency(b.formulated, b.currency)}</span>
                       </div>
-                      <div className="h-1.5 w-full bg-black/60 rounded-full overflow-hidden">
+                      <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
                         <div 
-                          className={`h-full rounded-full transition-all duration-1000 ${b.status === 'EXCEEDED' ? 'bg-red-500' : 'bg-amber-400'}`}
+                          className={`h-full rounded-full transition-all duration-1000 ${b.status === 'EXCEEDED' ? 'bg-red-500' : b.status === 'WARNING' ? 'bg-amber-400' : 'bg-emerald-500'}`}
                           style={{ width: `${Math.min((b.consumed / Math.max(b.formulated, 1)) * 100, 100)}%` }}
                         ></div>
                       </div>

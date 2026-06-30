@@ -136,7 +136,7 @@ export default function BudgetsPage() {
                             </div>
                             
                             {/* Progress bar global */}
-                            <div className="h-3 w-full bg-white/5 rounded-full overflow-hidden mt-4 relative">
+                            <div className="h-3 w-full bg-white/10 rounded-full overflow-hidden mt-4 relative">
                                 <div 
                                     className={`absolute top-0 left-0 h-full rounded-full transition-all duration-1000 ${globalStatus === 'EXCEEDED' ? 'bg-red-500' : globalStatus === 'WARNING' ? 'bg-amber-400' : 'bg-emerald-500'}`}
                                     style={{ width: `${Math.min((totalConsumed / Math.max(totalFormulated, 1)) * 100, 100)}%` }}
@@ -187,7 +187,7 @@ export default function BudgetsPage() {
                                                                 <span>{formatCurrency(item.formulated, item.currency)}</span>
                                                             </div>
                                                         </div>
-                                                        <div className="h-2 w-full bg-black/50 rounded-full overflow-hidden relative">
+                                                        <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden relative">
                                                             <div 
                                                                 className={`absolute top-0 left-0 h-full rounded-full transition-all duration-1000 ${item.status === 'EXCEEDED' ? 'bg-red-500' : item.status === 'WARNING' ? 'bg-amber-400' : 'bg-emerald-500'}`}
                                                                 style={{ width: `${Math.min((item.consumed / Math.max(item.formulated, 1)) * 100, 100)}%` }}
