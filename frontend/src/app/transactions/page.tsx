@@ -299,7 +299,13 @@ export default function TransactionsPage() {
 
         const validItemId = availableItems.some((i: any) => i.id === formData.itemId) ? formData.itemId : undefined;
         const validProjectId = projects.some(p => p.id === formData.projectId) ? formData.projectId : undefined;
-        const validGoalId = goals.some(g => g.id === formData.goalId) ? formData.goalId : undefined;
+        
+        let validGoalId = undefined;
+        if (formData.type === 'expense') {
+            validGoalId = goals.some(g => g.id === formData.goalId && g.type === 'expense') ? formData.goalId : undefined;
+        } else {
+            validGoalId = goals.some(g => g.id === formData.goalId && (g.type || 'savings') === 'savings') ? formData.goalId : undefined;
+        }
 
         const payload = {
             accountId: accounts.some(a => a.id === formData.accountId) ? formData.accountId : undefined,
@@ -338,7 +344,7 @@ export default function TransactionsPage() {
                     itemId: formData.itemId,
                     projectId: formData.projectId,
                     destinationAccountId: formData.type === 'transfer' ? formData.destinationAccountId : "",
-                    goalId: formData.goalId,
+                    goalId: validGoalId,
                 };
                 localStorage.setItem('txFormDefaults', JSON.stringify(defaults));
             }
@@ -649,17 +655,17 @@ export default function TransactionsPage() {
                                         <div className="flex bg-black/50 border border-white/10 rounded-lg p-1">
                                             <button
                                                 type="button"
-                                                onClick={() => setFormData(prev => ({ ...prev, type: "expense" }))}
+                                                onClick={() => setFormData(prev => ({ ...prev, type: "expense", goalId: "", destinationAccountId: "" }))}
                                                 className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-colors ${formData.type === 'expense' ? 'bg-red-500/20 text-red-500' : 'text-gray-500 hover:text-gray-300'}`}
                                             >Gasto</button>
                                             <button
                                                 type="button"
-                                                onClick={() => setFormData(prev => ({ ...prev, type: "income" }))}
+                                                onClick={() => setFormData(prev => ({ ...prev, type: "income", goalId: "", destinationAccountId: "" }))}
                                                 className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-colors ${formData.type === 'income' ? 'bg-emerald-500/20 text-emerald-500' : 'text-gray-500 hover:text-gray-300'}`}
                                             >Ingreso</button>
                                             <button
                                                 type="button"
-                                                onClick={() => setFormData(prev => ({ ...prev, type: "transfer" }))}
+                                                onClick={() => setFormData(prev => ({ ...prev, type: "transfer", goalId: "" }))}
                                                 className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-colors ${formData.type === 'transfer' ? 'bg-blue-500/20 text-blue-500' : 'text-gray-500 hover:text-gray-300'}`}
                                             >Transferencia</button>
                                         </div>
