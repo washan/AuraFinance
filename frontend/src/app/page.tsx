@@ -115,7 +115,10 @@ export default function Dashboard() {
       const qs = params.toString();
       const url = `${process.env.NEXT_PUBLIC_API_URL}/dashboard/summary${qs ? `?${qs}` : ""}`;
       const transactionsUrl = `${process.env.NEXT_PUBLIC_API_URL}/transactions?take=5${projectId ? `&projectId=${projectId}` : ""}`;
-      const budgetsUrl = `${process.env.NEXT_PUBLIC_API_URL}/budgets?period=${month || getCurrentMonth()}`;
+      const targetMonth = month || getCurrentMonth(); // YYYY-MM
+      const [year, m] = targetMonth.split('-');
+      const formattedPeriod = `${m}-${year}`;
+      const budgetsUrl = `${process.env.NEXT_PUBLIC_API_URL}/budgets?period=${formattedPeriod}`;
 
       const [summaryRes, transactionsRes, budgetsRes] = await Promise.all([
         fetch(url, { headers: { Authorization: `Bearer ${token}` } }),
