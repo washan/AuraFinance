@@ -143,7 +143,10 @@ export default function Dashboard() {
 
       setMetrics(summaryData);
       setRecentTransactions(transactionsData);
-      setBudgetWarnings(budgetsData.filter((b: any) => b.consumed > 0));
+      console.log("DASHBOARD budgetsData:", budgetsData);
+      const warnings = budgetsData.filter((b: any) => b.consumed > 0);
+      console.log("DASHBOARD warnings:", warnings);
+      setBudgetWarnings(warnings);
     } catch (err: any) {
       setError(err.message || "Failed to load dashboard data");
     } finally {
@@ -288,13 +291,14 @@ export default function Dashboard() {
             </div>
           )}
 
-          {budgetWarnings.length > 0 && (
-            <div className="bg-gradient-to-r from-purple-500/10 to-indigo-500/10 border border-indigo-500/20 p-6 rounded-3xl relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full blur-2xl -mx-10 -my-10 pointer-events-none"></div>
-              <div className="flex items-center gap-3 mb-4 relative z-10">
-                <Target className="text-purple-400 shrink-0" size={24} />
-                <h2 className="text-lg font-medium text-white">Resumen de Presupuestos</h2>
-              </div>
+          {/* Force render for debugging */}
+          <div className="bg-gradient-to-r from-purple-500/10 to-indigo-500/10 border border-indigo-500/20 p-6 rounded-3xl relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full blur-2xl -mx-10 -my-10 pointer-events-none"></div>
+            <div className="flex items-center gap-3 mb-4 relative z-10">
+              <Target className="text-purple-400 shrink-0" size={24} />
+              <h2 className="text-lg font-medium text-white">Resumen de Presupuestos (Debug: {budgetWarnings.length} items)</h2>
+            </div>
+            {budgetWarnings.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 relative z-10">
                 {budgetWarnings.map((b: any) => (
                   <div key={b.itemId} className="bg-black/40 p-4 rounded-xl border border-white/5 flex flex-col justify-between hover:bg-white/[0.02] transition-colors">
@@ -319,8 +323,10 @@ export default function Dashboard() {
                   </div>
                 ))}
               </div>
-            </div>
-          )}
+            ) : (
+              <p className="text-gray-400 text-sm mt-4">No hay ítems con gastos este mes.</p>
+            )}
+          </div>
 
           {metrics && (
             <>
