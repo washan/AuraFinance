@@ -31,6 +31,8 @@ export class TransactionsController {
         @Query('accountId') accountId?: string,
         @Query('projectId') projectId?: string,
         @Query('month') month?: string,
+        @Query('goalId') goalId?: string,
+        @Query('itemId') itemId?: string,
         @Query('take') take?: string,
         @Query('skip') skip?: string
     ) {
@@ -39,6 +41,8 @@ export class TransactionsController {
             accountId,
             projectId,
             month,
+            goalId,
+            itemId,
             take ? parseInt(take) : (month ? 500 : 50),
             skip ? parseInt(skip) : 0
         );

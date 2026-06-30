@@ -5,7 +5,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 export class TransactionsService {
     constructor(private prisma: PrismaService) { }
 
-    async findAll(householdId: string, accountId?: string, projectId?: string, month?: string, take: number = 50, skip: number = 0) {
+    async findAll(householdId: string, accountId?: string, projectId?: string, month?: string, goalId?: string, itemId?: string, take: number = 50, skip: number = 0) {
         const whereClause: any = {
             user: { householdId }
         };
@@ -18,7 +18,13 @@ export class TransactionsService {
         } else if (projectId) {
             whereClause.projectId = projectId;
         }
-        if (month && /^\d{4}-\d{2}$/.test(month)) {
+        if (goalId) {
+            whereClause.goalId = goalId;
+        }
+        if (itemId) {
+            whereClause.itemId = itemId;
+        }
+        if (month && month !== 'all' && /^\d{4}-\d{2}$/.test(month)) {
             const [y, m] = month.split('-').map(Number);
             const refMonth = m - 1;
             const mStart = new Date(Date.UTC(y, refMonth, 1, 0, 0, 0, 0));

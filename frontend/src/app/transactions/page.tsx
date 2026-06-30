@@ -47,15 +47,19 @@ export default function TransactionsPage() {
     };
     const [selectedMonth, setSelectedMonth] = useState<string>(getCurrentMonth());
     const [filterProjectId, setFilterProjectId] = useState<string>("");
+    const [filterGoalId, setFilterGoalId] = useState<string>("");
+    const [filterItemId, setFilterItemId] = useState<string>("");
 
     // Direct fetch for transactions only (called from filter handlers)
-    const fetchTransactions = async (month: string, projectId: string) => {
+    const fetchTransactions = async (month: string, projectId: string, goalId: string = filterGoalId, itemId: string = filterItemId) => {
         const token = localStorage.getItem("token");
         if (!token) return;
 
         const params = new URLSearchParams();
         if (month) params.set('month', month);
         if (projectId) params.set('projectId', projectId);
+        if (goalId) params.set('goalId', goalId);
+        if (itemId) params.set('itemId', itemId);
         const qs = params.toString();
         const url = `${process.env.NEXT_PUBLIC_API_URL}/transactions${qs ? `?${qs}` : ''}`;
 
@@ -72,6 +76,7 @@ export default function TransactionsPage() {
     };
 
     const navigateMonth = (direction: -1 | 1) => {
+        if (selectedMonth === 'all' || !selectedMonth.includes('-')) return;
         const [y, m] = selectedMonth.split('-').map(Number);
         let newMonth = m + direction;
         let newYear = y;
@@ -82,21 +87,22 @@ export default function TransactionsPage() {
         fetchTransactions(newValue, filterProjectId);
     };
 
+    const formatMonthLabel = (monthStr: string) => {
+        if (monthStr === 'all' || !monthStr.includes('-')) return 'Histórico Completo';
+        const [y, m] = monthStr.split('-').map(Number);
+        const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+        return `${monthNames[m - 1]} ${y}`;
+    };
+
     const goToCurrentMonth = () => {
         const current = getCurrentMonth();
         setSelectedMonth(current);
-        fetchTransactions(current, filterProjectId);
+        fetchTransactions(current, filterProjectId, filterGoalId, filterItemId);
     };
 
     const handleProjectFilterChange = (newProjectId: string) => {
         setFilterProjectId(newProjectId);
-        fetchTransactions(selectedMonth, newProjectId);
-    };
-
-    const formatMonthLabel = (monthStr: string) => {
-        const [y, m] = monthStr.split('-').map(Number);
-        const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-        return `${monthNames[m - 1]} ${y}`;
+        fetchTransactions(selectedMonth, newProjectId, filterGoalId, filterItemId);
     };
 
     const isCurrentMonth = selectedMonth === getCurrentMonth();
@@ -138,10 +144,23 @@ export default function TransactionsPage() {
             router.push("/auth");
         } else {
             setUser(JSON.parse(storedUser));
-            fetchData(token, selectedMonth, filterProjectId || undefined);
-
             if (typeof window !== "undefined") {
                 const params = new URLSearchParams(window.location.search);
+                const gId = params.get('goalId') || "";
+                const iId = params.get('itemId') || "";
+                const mo = params.get('month');
+
+                let initialMonth = selectedMonth;
+                if (mo) {
+                    initialMonth = mo;
+                    setSelectedMonth(mo);
+                }
+
+                if (gId) setFilterGoalId(gId);
+                if (iId) setFilterItemId(iId);
+
+                fetchData(token, initialMonth, filterProjectId || undefined, gId, iId);
+
                 const inboxId = params.get('inboxId');
                 const origin = params.get('origin');
 
@@ -198,7 +217,7 @@ export default function TransactionsPage() {
         }
     }, [router]);
 
-    const fetchData = async (token: string, month?: string, projectId?: string) => {
+    const fetchData = async (token: string, month?: string, projectId?: string, goalId?: string, itemId?: string) => {
         try {
             const hdrs = { Authorization: `Bearer ${token}` };
 
@@ -206,6 +225,8 @@ export default function TransactionsPage() {
             const txParams = new URLSearchParams();
             if (month) txParams.set('month', month);
             if (projectId) txParams.set('projectId', projectId);
+            if (goalId) txParams.set('goalId', goalId);
+            if (itemId) txParams.set('itemId', itemId);
             const txQs = txParams.toString();
             const txUrl = `${process.env.NEXT_PUBLIC_API_URL}/transactions${txQs ? `?${txQs}` : ''}`;
 
@@ -348,7 +369,7 @@ export default function TransactionsPage() {
                 };
                 localStorage.setItem('txFormDefaults', JSON.stringify(defaults));
             }
-            fetchData(token!, selectedMonth, filterProjectId || undefined);
+            fetchData(token!, selectedMonth, filterProjectId || undefined, filterGoalId || undefined, filterItemId || undefined);
             if (!isEditing && !returnTo) {
                 setToast({ message: "Transacción registrada exitosamente.", type: "success" });
             } else if (isEditing) {
@@ -374,7 +395,7 @@ export default function TransactionsPage() {
         });
         if (res.ok) {
             setToast({ message: "Transacción eliminada.", type: "success" });
-            fetchData(token!, selectedMonth, filterProjectId || undefined);
+            fetchData(token!, selectedMonth, filterProjectId || undefined, filterGoalId || undefined, filterItemId || undefined);
         } else {
             setToast({ message: "Ocurrió un error al eliminar la transacción.", type: "error" });
         }
@@ -547,6 +568,44 @@ export default function TransactionsPage() {
 
 
                 <div className="p-4 md:p-8 max-w-6xl mx-auto w-full space-y-8 pb-20">
+                    {/* Active Filters UI */}
+                    {(filterGoalId || filterItemId) && (
+                        <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-sm text-gray-400">Filtrando por:</span>
+                            {filterGoalId && (
+                                <span className="bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-3 py-1.5 rounded-full text-sm flex items-center gap-2">
+                                    🎯 Meta: {goals.find(g => g.id === filterGoalId)?.title || 'Cargando...'}
+                                    <button onClick={() => {
+                                        setFilterGoalId("");
+                                        if (selectedMonth === 'all') {
+                                            setSelectedMonth(getCurrentMonth());
+                                            fetchTransactions(getCurrentMonth(), filterProjectId, "", filterItemId);
+                                        } else {
+                                            fetchTransactions(selectedMonth, filterProjectId, "", filterItemId);
+                                        }
+                                        window.history.replaceState({}, document.title, window.location.pathname);
+                                    }} className="hover:text-white p-0.5"><X size={14} /></button>
+                                </span>
+                            )}
+                            {filterItemId && (
+                                <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-3 py-1.5 rounded-full text-sm flex items-center gap-2">
+                                    🏷️ Ítem: {(() => {
+                                        for(const c of categories) {
+                                            const item = c.items?.find((i:any) => i.id === filterItemId);
+                                            if (item) return item.name;
+                                        }
+                                        return 'Cargando...';
+                                    })()}
+                                    <button onClick={() => {
+                                        setFilterItemId("");
+                                        fetchTransactions(selectedMonth, filterProjectId, filterGoalId, "");
+                                        window.history.replaceState({}, document.title, window.location.pathname);
+                                    }} className="hover:text-white p-0.5"><X size={14} /></button>
+                                </span>
+                            )}
+                        </div>
+                    )}
+
                     {/* Activity List */}
                     <div className="bg-white/5 border border-white/10 rounded-3xl p-6 backdrop-blur-sm">
                         <div className="flex justify-between items-center mb-6">

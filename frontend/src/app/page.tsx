@@ -18,6 +18,7 @@ import {
   ChevronRight,
   Calendar
 } from "lucide-react";
+import Link from "next/link";
 import { Sidebar } from "@/components/Sidebar";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -297,7 +298,7 @@ export default function Dashboard() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 relative z-10">
                 {budgetWarnings.map((b: any) => (
-                  <div key={b.itemId} className="bg-black/40 p-4 rounded-xl border border-white/5 flex flex-col justify-between hover:bg-white/[0.02] transition-colors">
+                  <Link href={`/transactions?itemId=${b.itemId}&month=${selectedMonth}`} key={b.itemId} className="bg-black/40 p-4 rounded-xl border border-white/5 flex flex-col justify-between hover:bg-white/[0.02] transition-colors">
                     <div className="flex justify-between items-start mb-2">
                       <span className="font-medium text-sm text-gray-200">{b.itemName}</span>
                       <span className={`text-[10px] px-2 py-0.5 rounded-full border font-semibold ${b.status === 'EXCEEDED' ? 'bg-red-500/20 text-red-300 border-red-500/30' : b.status === 'WARNING' ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'}`}>
@@ -316,7 +317,7 @@ export default function Dashboard() {
                         ></div>
                       </div>
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             </div>
@@ -364,21 +365,24 @@ export default function Dashboard() {
               {/* Goals Speedometer Section */}
               {metrics.goalsProgress && metrics.goalsProgress.length > 0 && (
                 <div className="mt-8 mb-4">
-                  <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-lg font-medium">Progreso de Metas</h3>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                    {metrics.goalsProgress.map((goal: any) => (
-                      <GoalSpeedometer
-                        key={goal.id}
-                        id={goal.id}
-                        title={goal.title}
-                        currentAmount={goal.currentAmount}
-                        targetAmount={goal.targetAmount}
-                        currencySymbol={metrics.currencySymbol}
-                        type={goal.type}
-                      />
-                    ))}
+                  <div className="bg-white/5 border border-white/10 rounded-3xl p-6 backdrop-blur-sm relative overflow-hidden">
+                    <div className="flex justify-between items-center mb-6 relative z-10">
+                      <h3 className="text-lg font-medium">Progreso de Metas</h3>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 relative z-10">
+                      {metrics.goalsProgress.map((goal: any) => (
+                        <Link key={goal.id} href={`/transactions?goalId=${goal.id}&month=all`} className="block transition-transform hover:scale-105 cursor-pointer">
+                          <GoalSpeedometer
+                            id={goal.id}
+                            title={goal.title}
+                            currentAmount={goal.currentAmount}
+                            targetAmount={goal.targetAmount}
+                            currencySymbol={metrics.currencySymbol}
+                            type={goal.type}
+                          />
+                        </Link>
+                      ))}
+                    </div>
                   </div>
                 </div>
               )}

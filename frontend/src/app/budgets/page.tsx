@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Sidebar } from "@/components/Sidebar";
 import { Target, ChevronLeft, ChevronRight, Edit2, Info, AlertCircle, Plus } from "lucide-react";
+import Link from "next/link";
 import { Toast, ToastType } from "@/components/ui/toast";
 import { formatCurrency } from "@/lib/utils";
 import { getBudgetSummary, upsertBudget, BudgetSummaryItem } from "@/services/budgetService";
@@ -175,10 +176,10 @@ export default function BudgetsPage() {
                                                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                                                     
                                                     {/* Nombre y Barras */}
-                                                    <div className="flex-1">
+                                                    <Link href={`/transactions?itemId=${item.itemId}&month=${selectedMonth}`} className="flex-1 block group cursor-pointer hover:opacity-80 transition-opacity">
                                                         <div className="flex justify-between items-center mb-2">
                                                             <div className="flex items-center gap-2">
-                                                                <h4 className="font-medium text-white">{item.itemName}</h4>
+                                                                <h4 className="font-medium text-white group-hover:text-indigo-300 transition-colors">{item.itemName}</h4>
                                                                 {item.status === 'EXCEEDED' && <AlertCircle size={14} className="text-red-400" />}
                                                             </div>
                                                             <div className="text-sm text-gray-400 text-right">
@@ -193,7 +194,7 @@ export default function BudgetsPage() {
                                                                 style={{ width: `${Math.min((item.consumed / Math.max(item.formulated, 1)) * 100, 100)}%` }}
                                                             ></div>
                                                         </div>
-                                                    </div>
+                                                    </Link>
 
                                                     {/* Botones de Edición */}
                                                     <div className="flex items-center gap-2 md:w-64 shrink-0 justify-end">
