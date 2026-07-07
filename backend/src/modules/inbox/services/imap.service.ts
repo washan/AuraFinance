@@ -5,6 +5,9 @@ import * as imaps from 'imap-simple';
 import { simpleParser } from 'mailparser';
 import { ParserService } from './parser.service';
 import { WhatsAppService } from '../../whatsapp/whatsapp.service';
+import { BudgetsService } from '../../budgets/budgets.service';
+import { InboxRulesService } from '../../inbox-rules/inbox-rules.service';
+import { format } from 'date-fns';
 
 @Injectable()
 export class ImapService {
@@ -14,6 +17,8 @@ export class ImapService {
         private prisma: PrismaService,
         private parserService: ParserService,
         private whatsappService: WhatsAppService,
+        private budgetsService: BudgetsService,
+        private inboxRulesService: InboxRulesService
     ) { }
 
     async syncAllActiveConnections() {
@@ -111,9 +116,30 @@ export class ImapService {
                         });
                         this.logger.log(`Created new pending transaction for merchant: ${parsedData.merchant}`);
                         
+                        // Check budget using rules engine
+                        const currentPeriod = format(new Date(), 'MM-yyyy');
+                        const budgetSummary = await this.budgetsService.getBudgetSummary(connection.householdId, currentPeriod);
+                        const matchedRule = await this.inboxRulesService.applyRules(connection.householdId, parsedData.merchant);
+                        
+                        let budgetInfo = '\n⚠️ No presupuestado';
+                        if (matchedRule && matchedRule.itemId) {
+                            const budget = budgetSummary.find((b: any) => b.itemId === matchedRule.itemId);
+                            if (budget && budget.formulated > 0) {
+                                const newTotal = budget.consumed + Number(parsedData.amount);
+                                const left = budget.formulated - newTotal;
+                                const leftFormatted = new Intl.NumberFormat('es-CR', { style: 'currency', currency: budget.currency }).format(Math.abs(left));
+                                
+                                if (left < 0) {
+                                    budgetInfo = `\n⚠️ Presupuesto excedido por: ${leftFormatted}`;
+                                } else {
+                                    budgetInfo = `\n📊 Presupuesto restante: ${leftFormatted}`;
+                                }
+                            }
+                        }
+
                         // Notify via WhatsApp
                         const amountFormatted = new Intl.NumberFormat('es-CR', { style: 'currency', currency: parsedData.currency }).format(Number(parsedData.amount));
-                        const message = `🤖 *Aura Buzón*\nNuevo gasto detectado:\n🏪 Comercio: ${parsedData.merchant}\n💰 Monto: ${amountFormatted}\n\nRequiere tu clasificación en la app.`;
+                        const message = `🤖 *Aura Buzón*\nNuevo gasto detectado:\n🏪 Comercio: ${parsedData.merchant}\n💰 Monto: ${amountFormatted}${budgetInfo}\n\nRequiere tu clasificación en la app.`;
                         this.whatsappService.sendMessageToConfiguredNumbers(connection.userId, message).catch(err => {
                             this.logger.error('Failed to notify via WhatsApp from IMAP', err);
                         });
