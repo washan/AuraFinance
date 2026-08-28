@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, UseGuards } from '@nestjs/common';
 import { WhatsAppService } from './whatsapp.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
@@ -10,5 +10,11 @@ export class WhatsAppController {
     @Get('status')
     getStatus() {
         return this.whatsappService.getStatus();
+    }
+
+    @Post('reset')
+    async resetSession() {
+        await this.whatsappService.resetSession();
+        return { success: true, message: 'WhatsApp session reset successfully' };
     }
 }

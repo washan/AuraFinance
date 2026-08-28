@@ -162,6 +162,18 @@ export class WhatsAppService implements OnModuleInit, OnModuleDestroy {
         }
     }
 
+    async resetSession() {
+        this.logger.log('Manually resetting WhatsApp session...');
+        if (this.client) {
+            try { this.client.end(undefined); } catch (e) {}
+            this.client = null;
+        }
+        await this.prisma.whatsAppSession.deleteMany({});
+        this.status = 'INITIALIZING';
+        this.qrCodeDataUrl = null;
+        this.initializeClient();
+    }
+
     getStatus() {
         return {
             status: this.status,
