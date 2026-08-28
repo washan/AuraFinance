@@ -124,6 +124,21 @@ export default function SettingsPage() {
         }
     };
 
+    const handleResetWhatsapp = async () => {
+        if (!window.confirm("¿Estás seguro de desconectar y reiniciar la sesión de WhatsApp? Tendrás que volver a escanear el código QR.")) return;
+        const token = localStorage.getItem("token");
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/whatsapp/reset`, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.ok) {
+            setToast({ message: "Sesión reiniciada. Espera unos segundos y actualiza el estado.", type: "success" });
+            fetchCatalogs(token!);
+        } else {
+            setToast({ message: "Error al reiniciar WhatsApp.", type: "error" });
+        }
+    };
+
 
     const handleCreateCurrency = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -1738,7 +1753,15 @@ export default function SettingsPage() {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                     <div className="space-y-6">
                                         <div className="bg-black/40 border border-white/10 p-6 rounded-2xl">
-                                            <h4 className="text-md font-medium mb-4">Estado de Conexión</h4>
+                                            <div className="flex justify-between items-center mb-4">
+                                                <h4 className="text-md font-medium">Estado de Conexión</h4>
+                                                <button 
+                                                    onClick={handleResetWhatsapp}
+                                                    className="text-xs text-red-400 hover:text-white bg-red-500/10 hover:bg-red-500 border border-red-500/20 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5"
+                                                >
+                                                    <RefreshCw size={12} /> Reiniciar / Desconectar
+                                                </button>
+                                            </div>
                                             {whatsappStatus?.status === 'CONNECTED' ? (
                                                 <div className="flex items-center gap-3 text-green-400 bg-green-500/10 p-4 rounded-xl border border-green-500/20">
                                                     <Check size={24} />

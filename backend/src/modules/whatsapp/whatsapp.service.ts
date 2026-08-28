@@ -12,6 +12,7 @@ export class WhatsAppService implements OnModuleInit, OnModuleDestroy {
     private client: any;
     private qrCodeDataUrl: string | null = null;
     private status: 'INITIALIZING' | 'QR_READY' | 'CONNECTED' | 'DISCONNECTED' = 'INITIALIZING';
+    private reconnectTimeout: NodeJS.Timeout | null = null;
 
     constructor(
         private parametersService: ParametersService,
@@ -144,7 +145,8 @@ export class WhatsAppService implements OnModuleInit, OnModuleDestroy {
                     }
                     
                     // Always reconnect (if logged out, it will generate a new QR)
-                    setTimeout(() => {
+                    if (this.reconnectTimeout) clearTimeout(this.reconnectTimeout);
+                    this.reconnectTimeout = setTimeout(() => {
                         this.initializeClient();
                     }, 5000);
                 } else if (connection === 'open') {
@@ -156,7 +158,8 @@ export class WhatsAppService implements OnModuleInit, OnModuleDestroy {
         } catch (error) {
             this.logger.error('Failed to initialize WhatsApp client', error);
             // Retry later
-            setTimeout(() => {
+            if (this.reconnectTimeout) clearTimeout(this.reconnectTimeout);
+            this.reconnectTimeout = setTimeout(() => {
                 this.initializeClient();
             }, 5000);
         }
@@ -164,14 +167,23 @@ export class WhatsAppService implements OnModuleInit, OnModuleDestroy {
 
     async resetSession() {
         this.logger.log('Manually resetting WhatsApp session...');
+        if (this.reconnectTimeout) {
+            clearTimeout(this.reconnectTimeout);
+            this.reconnectTimeout = null;
+        }
         if (this.client) {
+            try { this.client.logout(); } catch (e) {}
             try { this.client.end(undefined); } catch (e) {}
             this.client = null;
         }
         await this.prisma.whatsAppSession.deleteMany({});
         this.status = 'INITIALIZING';
         this.qrCodeDataUrl = null;
-        this.initializeClient();
+        
+        // Use a short delay before reconnecting to ensure DB is cleared and sockets are closed
+        this.reconnectTimeout = setTimeout(() => {
+            this.initializeClient();
+        }, 2000);
     }
 
     getStatus() {

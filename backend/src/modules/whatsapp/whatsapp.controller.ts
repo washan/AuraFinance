@@ -12,7 +12,8 @@ export class WhatsAppController {
         return this.whatsappService.getStatus();
     }
 
-    @Get('reset')
+    @Post('reset')
+    @UseGuards(JwtAuthGuard)
     async resetSession() {
         await this.whatsappService.resetSession();
         return { success: true, message: 'WhatsApp session reset successfully. You can now go back to AuraFinance and scan the QR.' };
