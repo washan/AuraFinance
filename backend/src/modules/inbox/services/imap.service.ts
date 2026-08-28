@@ -59,16 +59,19 @@ export class ImapService {
             imapConnection = await imaps.connect(config);
             await imapConnection.openBox('INBOX');
 
-            // Buscar correos no leídos que provengan del dominio del BAC
-            const searchCriteria = ['UNSEEN', ['OR', ['FROM', 'baccredomatic.cr'], ['FROM', 'notificacionesbaccr.com']]];
+            // Buscar correos no leídos que provengan de los dominios del BAC
+            const searchCriteria1 = ['UNSEEN', ['FROM', 'baccredomatic.cr']];
+            const searchCriteria2 = ['UNSEEN', ['FROM', 'notificacionesbaccr.com']];
             const fetchOptions = {
                 bodies: ['HEADER', 'TEXT', ''],
                 markSeen: true,
                 struct: true
             };
 
-            this.logger.log(`Searching IMAP with criteria: ${JSON.stringify(searchCriteria)}`);
-            const messages = await imapConnection.search(searchCriteria, fetchOptions);
+            this.logger.log(`Searching IMAP with criteria: ${JSON.stringify(searchCriteria1)} and ${JSON.stringify(searchCriteria2)}`);
+            const messages1 = await imapConnection.search(searchCriteria1, fetchOptions);
+            const messages2 = await imapConnection.search(searchCriteria2, fetchOptions);
+            const messages = [...messages1, ...messages2];
             this.logger.log(`Found ${messages.length} new messages from BAC Credomatic.`);
 
             for (const item of messages) {
