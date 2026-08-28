@@ -1,5 +1,5 @@
 import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
-import { makeWASocket, DisconnectReason, BufferJSON, initAuthCreds, SignalDataTypeMap, AuthenticationState } from '@whiskeysockets/baileys';
+import { makeWASocket, DisconnectReason, BufferJSON, initAuthCreds, SignalDataTypeMap, AuthenticationState, fetchLatestBaileysVersion, Browsers } from '@whiskeysockets/baileys';
 import { Boom } from '@hapi/boom';
 import * as qrcode from 'qrcode';
 import pino from 'pino';
@@ -108,12 +108,16 @@ export class WhatsAppService implements OnModuleInit, OnModuleDestroy {
             const { state, saveCreds } = await this.usePrismaAuthState();
             
             const pinoLogger = pino({ level: 'silent' });
+            
+            const { version } = await fetchLatestBaileysVersion();
+            this.logger.log(`Using WhatsApp Web version: ${version.join('.')}`);
 
             this.client = makeWASocket({
+                version,
                 auth: state,
                 printQRInTerminal: false,
                 logger: pinoLogger,
-                browser: ['Aura Finance', 'Chrome', '10.0'],
+                browser: Browsers.ubuntu('Chrome'),
             });
 
             this.client.ev.on('creds.update', saveCreds);
