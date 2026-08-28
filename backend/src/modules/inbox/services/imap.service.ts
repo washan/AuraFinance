@@ -60,7 +60,7 @@ export class ImapService {
             await imapConnection.openBox('INBOX');
 
             // Buscar correos no leídos que provengan del dominio del BAC
-            const searchCriteria = ['UNSEEN', ['FROM', 'notificacionesbaccr.com']];
+            const searchCriteria = ['UNSEEN', ['OR', ['FROM', 'baccredomatic.cr'], ['FROM', 'notificacionesbaccr.com']]];
             const fetchOptions = {
                 bodies: ['HEADER', 'TEXT', ''],
                 markSeen: true,

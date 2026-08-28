@@ -78,8 +78,8 @@ export class ParserService {
                 }
             }
 
-            // Look for account/card: "MASTER ***5028"
-            const accountMatch = textContent.match(/(MASTER|VISA)\s*\*{3,4}\d{4}/i);
+            // Look for account/card: "MASTER ***5028" or "MASTER: ************2304"
+            const accountMatch = textContent.match(/(MASTER|VISA)\s*[:]?\s*\*+\d{4}/i);
             if (accountMatch) {
                 accountInfo = accountMatch[0].trim();
             }
